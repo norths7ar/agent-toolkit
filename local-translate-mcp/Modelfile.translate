@@ -1,0 +1,22 @@
+FROM qwen3:4b
+
+# A compact Qwen chat template for translation and other direct-response tasks.
+# An empty, closed think block is Qwen3's real non-thinking prefill.
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end -}}
+{{- range .Messages }}<|im_start|>{{ .Role }}
+{{ .Content }}<|im_end|>
+{{ end -}}<|im_start|>assistant
+<think>
+
+</think>
+
+"""
+
+PARAMETER temperature 0.2
+PARAMETER top_k 20
+PARAMETER top_p 0.95
+PARAMETER repeat_penalty 1
+PARAMETER stop <|im_start|>
+PARAMETER stop <|im_end|>
