@@ -17,6 +17,7 @@ from mcp.server.mcpserver import MCPServer
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen3-vl:8b"
+DEFAULT_KEEP_ALIVE = "5m"
 REQUEST_TIMEOUT_SECONDS = 180
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -53,11 +54,16 @@ def build_ollama_payload(*, image_base64: str, question: str) -> dict[str, objec
     if not question.strip():
         raise ValueError("question must not be blank")
 
+    keep_alive = (
+        os.environ.get("LOCAL_VISION_KEEP_ALIVE", DEFAULT_KEEP_ALIVE).strip()
+        or DEFAULT_KEEP_ALIVE
+    )
+
     return {
         "model": os.environ.get("OLLAMA_VISION_MODEL", DEFAULT_MODEL),
         "stream": False,
         "think": False,
-        "keep_alive": 0,
+        "keep_alive": keep_alive,
         "messages": [
             {
                 "role": "system",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from server import (
     MAX_TEXT_CHARACTERS,
@@ -22,7 +23,7 @@ class ServerTests(unittest.TestCase):
 
         self.assertEqual(payload["model"], "qwen3:4b-translate")
         self.assertFalse(payload["stream"])
-        self.assertEqual(payload["keep_alive"], 0)
+        self.assertEqual(payload["keep_alive"], "2m")
         self.assertEqual(payload["messages"][1]["content"], "本地模型已经可以工作了。")
 
     def test_blank_text_is_rejected(self) -> None:
@@ -30,6 +31,15 @@ class ServerTests(unittest.TestCase):
             build_translation_payload(
                 text="  ", source_language="Chinese", target_language="English"
             )
+
+    def test_keep_alive_can_be_configured_per_mcp(self) -> None:
+        with patch.dict("os.environ", {"LOCAL_TRANSLATE_KEEP_ALIVE": "10m"}):
+            payload = build_translation_payload(
+                text="本地模型已经可以工作了。",
+                source_language="Chinese",
+                target_language="English",
+            )
+        self.assertEqual(payload["keep_alive"], "10m")
 
     def test_oversized_text_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "character local tool limit"):

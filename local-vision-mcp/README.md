@@ -22,9 +22,10 @@ uv run ruff format --check .
 
 ## Codex registration
 
-- Command: `E:\GitHub-Repos\local-vision-mcp\.venv\Scripts\python.exe`
-- Arguments: `E:\GitHub-Repos\local-vision-mcp\server.py`
-- Working directory: `E:\GitHub-Repos\local-vision-mcp`
+- Command: `E:\GitHub-Repos\mcp-tools\local-vision-mcp\.venv\Scripts\python.exe`
+- Arguments: `E:\GitHub-Repos\mcp-tools\local-vision-mcp\server.py`
+- Working directory: `E:\GitHub-Repos\mcp-tools\local-vision-mcp`
 
-No environment variables are required. Optional overrides: `OLLAMA_BASE_URL`
-and `OLLAMA_VISION_MODEL`.
+Optional overrides: `OLLAMA_BASE_URL`, `OLLAMA_VISION_MODEL`, and
+`LOCAL_VISION_KEEP_ALIVE`. The last accepts Ollama `keep_alive` values such as
+`0`, `5m`, or `10m`; leave it unset to use `5m`.

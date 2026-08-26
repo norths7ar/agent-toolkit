@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from server import (
     MAX_IMAGE_BYTES,
@@ -49,12 +50,19 @@ class ServerTests(unittest.TestCase):
     def test_payload_keeps_image_local_to_ollama(self) -> None:
         payload = build_ollama_payload(image_base64="abc", question="What is shown?")
         self.assertEqual(payload["model"], "qwen3-vl:8b")
-        self.assertEqual(payload["keep_alive"], 0)
+        self.assertEqual(payload["keep_alive"], "5m")
         self.assertEqual(payload["messages"][1]["images"], ["abc"])
 
     def test_response_discards_thinking_text(self) -> None:
         response = {"message": {"content": "Final answer", "thinking": "internal"}}
         self.assertEqual(extract_analysis(response), ("Final answer", len("internal")))
+
+    def test_keep_alive_can_be_configured_per_mcp(self) -> None:
+        with patch.dict("os.environ", {"LOCAL_VISION_KEEP_ALIVE": "10m"}):
+            payload = build_ollama_payload(
+                image_base64="abc", question="What is shown?"
+            )
+        self.assertEqual(payload["keep_alive"], "10m")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from mcp.server.mcpserver import MCPServer
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen3:4b-translate"
+DEFAULT_KEEP_ALIVE = "2m"
 REQUEST_TIMEOUT_SECONDS = 120
 MAX_TEXT_CHARACTERS = 20_000
 
@@ -43,12 +44,16 @@ def build_translation_payload(
     source = normalize_label(source_language, field_name="source_language")
     target = normalize_label(target_language, field_name="target_language")
     model = os.environ.get("OLLAMA_TRANSLATE_MODEL", DEFAULT_MODEL)
+    keep_alive = (
+        os.environ.get("LOCAL_TRANSLATE_KEEP_ALIVE", DEFAULT_KEEP_ALIVE).strip()
+        or DEFAULT_KEEP_ALIVE
+    )
 
     return {
         "model": model,
         "stream": False,
-        # Unload after each tool call so Codex does not leave the GPU occupied.
-        "keep_alive": 0,
+        # Keep the model warm briefly for related requests, then let Ollama release it.
+        "keep_alive": keep_alive,
         "messages": [
             {
                 "role": "system",
@@ -152,8 +157,7 @@ def translate_with_ollama(
     description=(
         "Translate text using the local qwen3:4b-translate Ollama model. "
         "Use for short to medium text when local-only translation is preferable. "
-        "The tool sends text only to http://127.0.0.1:11434 and unloads the model "
-        "after each request."
+        "The tool sends text only to http://127.0.0.1:11434."
     ),
 )
 def translate_text(

@@ -11,8 +11,9 @@ uses the tested `qwen3:4b-translate` model and Ollama's Chat API, not the
 - Python dependencies are installed with `uv sync`.
 
 The server requires neither an API key nor a `.env` file. It sends text only to
-`http://127.0.0.1:11434/api/chat`. Each request sets `keep_alive: 0`, so Ollama
-unloads the model after returning the translation.
+`http://127.0.0.1:11434/api/chat`. Requests keep the model loaded for two idle
+minutes by default, so related translations avoid a cold start before Ollama
+releases the GPU memory.
 
 ## Tool
 
@@ -35,9 +36,10 @@ uv run ruff format --check .
 
 Register an stdio MCP server with:
 
-- Command: `E:\GitHub-Repos\local-translate-mcp\.venv\Scripts\python.exe`
-- Arguments: `E:\GitHub-Repos\local-translate-mcp\server.py`
-- Working directory: `E:\GitHub-Repos\local-translate-mcp`
+- Command: `E:\GitHub-Repos\mcp-tools\local-translate-mcp\.venv\Scripts\python.exe`
+- Arguments: `E:\GitHub-Repos\mcp-tools\local-translate-mcp\server.py`
+- Working directory: `E:\GitHub-Repos\mcp-tools\local-translate-mcp`
 
-No environment variables are needed by default. Optional overrides are
-`OLLAMA_BASE_URL` and `OLLAMA_TRANSLATE_MODEL`.
+Optional overrides are `OLLAMA_BASE_URL`, `OLLAMA_TRANSLATE_MODEL`, and
+`LOCAL_TRANSLATE_KEEP_ALIVE`. The last accepts Ollama `keep_alive` values such
+as `0`, `2m`, or `10m`; leave it unset to use `2m`.
