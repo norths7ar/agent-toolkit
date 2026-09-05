@@ -25,7 +25,7 @@ Codex 在 `~/.codex/config.toml` 的 `[mcp_servers.*]` 里注册，command 指�
 
 `local/` 中的同步脚本与同步状态不纳入 Git，克隆仓库后需要自行配置本机部署入口。脚本在 PowerShell Skill 部署目录生成 `local-config.md`，将失败收件箱指向本仓库的 `errors/powershell-safe-invocation/`；无本机配置或目录不可写时，Skill 使用任务临时目录。
 
-`errors/` 中的原始案例不纳入 Git。普通任务仅记录经过脱敏的失败和验证结果；后续专门整理时才将有效经验提炼回 Skill，不自动修改规则或长期记忆。
+`errors/` 中的原始案例不纳入 Git。普通任务仅记录经过脱敏的失败和验证结果；后续专门整理时才将有效经验提炼回 Skill。
 
 ## 存档
 
