@@ -1,5 +1,7 @@
 # Local Vision MCP
 
+> 存档（2026-09-05）：本机已卸载 Ollama，此 MCP 已停用并停止维护。源码、测试和依赖锁文件保留供参考；下文为历史说明，其中注册路径不再适用。若重新启用，请按当前目录重建环境并重新验证。
+
 An stdio MCP server for private image analysis through local Ollama and
 `qwen3-vl:8b`.
 

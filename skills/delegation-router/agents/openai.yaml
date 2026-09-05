@@ -1,0 +1,7 @@
+interface:
+  display_name: "Delegation Router"
+  short_description: "Choose delegation and model size for nontrivial work"
+  default_prompt: "Use $delegation-router to decide whether and how to delegate this task."
+
+policy:
+  allow_implicit_invocation: true
