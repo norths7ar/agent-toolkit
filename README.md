@@ -1,4 +1,4 @@
-# mcp-tools
+# agent-toolkit
 
 个人 Agent 辅助工具与 Skills。MCP 项目独立管理依赖（各自 pyproject.toml / uv.lock / .venv），Skills 在 skills/ 中独立维护。
 
