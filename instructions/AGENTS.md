@@ -1,7 +1,7 @@
 # Environment and Python Tooling
 
 - OS: Windows 11 Pro. Prefer PowerShell 7 via `pwsh.exe`; use Windows PowerShell 5.1 only when explicitly required.
-- For any PowerShell or native Windows command task, load and follow the powershell-safe-invocation skill.
+- Use powershell-safe-invocation when writing scripts, handling complex native arguments, processes or filesystem mutations, or diagnosing shell invocation failures.
 - Prefer local execution; use Docker only when the project requires it.
 - Use uv by default for Python projects and respect the project's `pyproject.toml`, `uv.lock`, and `.python-version`. Never install Python packages globally.
 - If `uv` is unavailable on PATH, use `C:/Users/jnkyl/.local/bin/uv.exe`.
@@ -13,26 +13,20 @@
 - Prefer modern Python APIs and idioms available in the project's supported Python versions, such as pathlib.Path over os.path.
 - Follow the repository's existing formatter and linter; use Ruff for new Python projects when none is configured. Minimize unrelated formatting churn for upstreamable changes; broad cleanup belongs in an intentional, separate change for repositories you maintain independently.
 - Respect `.gitattributes` and `.editorconfig`; do not normalize unrelated line endings.
+- Do not hard-wrap prose in Markdown or other documentation.
 
 # Working Style
 
-- Prefer small, targeted changes and preserve existing architectural consistency.
-- For nontrivial implementation, investigation, review, and audit tasks, the primary agent must load and follow the delegation-router skill to decide whether and how to delegate. The primary agent chooses the team and execution role and owns final acceptance.
-- Keep code readable and boring; avoid speculative abstractions and completeness-driven engineering.
-- Validate proportionally to risk. Use automated checks for objective correctness, but do not treat self-verification as user acceptance; return control to the user for behavioral, UX, or preference-sensitive validation unless explicitly asked to perform it. Do not add tests, tooling, fallbacks, refactors, or documentation merely because they would make the change feel more complete.
-- Update authoritative documentation only when the implementation makes it materially incorrect.
+- Keep changes small, readable, and consistent with the existing architecture. Before adding code, check the existing implementation and ownership boundary; prefer reuse over duplication or speculative abstractions.
+- Keep implementation, tests, and documentation focused on the requested functionality and intended use. Add safeguards and constraints only for explicit requirements or concrete risks. Validate proportionally to risk without adding work merely for completeness; self-verification is not user acceptance.
 - Before adding dependencies, inspect existing manifests and lockfiles. Large frameworks, model weights, and datasets require explicit approval.
-- Do not hard-wrap prose in Markdown or other documentation.
-- Treat exploratory discussion and unselected alternatives as temporary context, not durable decisions. "Not chosen" does not mean rejected or prohibited.
-- Persist decisions or rejection rationale only when they are required to describe the current project state, or the user explicitly asks to preserve them.
-- Distinguish current-state implementation from one-off migration or transitional work. Treat temporary migration logic as disposable unless it has a concrete ongoing use case, and keep authoritative documentation focused on the current supported state.
-- Do not infer permanence from existence: obsolete code, schemas, workflows, or documentation may be removed rather than preserved or generalized.
-- Before adding new helpers, modules, or abstractions, search for the existing implementation and ownership boundary. Prefer one canonical implementation; avoid both premature abstraction and non-trivial duplication.
-
+- Keep authoritative documentation focused on the current supported state, updating it when implementation makes it materially incorrect. Remove obsolete code, workflows, and one-off migration logic when they have no ongoing use.
+- Persist decisions and rationale only when needed to describe the current project state or explicitly requested; do not turn exploratory discussion or unselected alternatives into decisions or prohibitions.
+- Use delegation-router when work has independently delegable subtasks or the user requests multi-agent work.
 
 # Git & Commits
 
-- Before executing Git or `gh` operations, load and follow the git-safe-workflow skill.
+- Use git-safe-workflow for Git or gh writes, pushes, releases, or permission, authentication, and signing failures.
 
 # Communicating with the User
 

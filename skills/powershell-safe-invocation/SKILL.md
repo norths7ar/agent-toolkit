@@ -1,6 +1,6 @@
 ---
 name: powershell-safe-invocation
-description: Prevent Bash-to-PowerShell syntax mistakes and Windows argument-passing errors; use when writing or running PowerShell or native Windows commands, and capture relevant failures for later skill improvement.
+description: Use for PowerShell scripts, complex native arguments, process or filesystem mutations, and shell invocation troubleshooting. Skip simple read-only commands.
 ---
 
 # PowerShell Safe Invocation

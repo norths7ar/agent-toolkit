@@ -17,7 +17,7 @@ decisions, use the existing MiMo MCP instead.
 
 ```powershell
 uv run python -m unittest -v
-uv run python verify_mcp.py E:\GitHub-Repos\MiMo-MCP\test_image1.jpg
+uv run python verify_mcp.py ..\..\MiMo-MCP\test_image1.jpg
 uv run ruff check .
 uv run ruff format --check .
 ```

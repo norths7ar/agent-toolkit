@@ -1,9 +1,5 @@
-# defense-in-depth (per-tool .gitignore already covers these)
 .env
 .venv/
 __pycache__/
 .ruff_cache/
-
-# Machine-local deployment and raw failure cases
-/local/
 /errors/

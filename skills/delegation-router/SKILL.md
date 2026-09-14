@@ -1,11 +1,11 @@
 ---
 name: delegation-router
-description: Help the primary agent decide whether and how to delegate nontrivial implementation, investigation, review, and audit work, with discretion over model size and team structure.
+description: Use when work has independently delegable subtasks or the user requests multi-agent work; choose the team and assign bounded work.
 ---
 
 # Delegation Router
 
-For nontrivial work, actively consider delegation before committing to an execution approach, and reconsider when scope changes. The primary agent decides whether delegation helps; neither spawning an agent nor narrating that decision is mandatory. Ordinary questions and status checks need no routing ceremony.
+For independently delegable work, consider whether delegation helps and reconsider when scope changes. The primary agent decides whether delegation helps; neither spawning an agent nor narrating that decision is mandatory. Ordinary questions and status checks need no routing ceremony.
 
 ## Choose the Team
 
@@ -16,7 +16,7 @@ Choose based on task separability, context-transfer cost, uncertainty, independe
 - Small models are optional for bounded, low-complexity or high-volume work when their observed speed and cost fit the task. Do not select them merely because an edit is small. The user has observed Luna to be slow; treat this as a local preference, not a universal benchmark.
 - Choose agent count, reasoning effort, and division of work freely within the exposed tools and task constraints. A complex task may justify a primary agent that only decomposes, coordinates, and accepts work.
 
-Model roles are independent of names. Current candidate mapping: large = GPT-6 Astra or GPT-5.6 Sol; medium = GPT-5.6 Terra; small = GPT-5.6 Luna. Use only model IDs and reasoning levels actually offered by the active tool; this mapping does not establish availability. If a candidate is unavailable, select a suitable available model or proceed directly without repeatedly retrying the unavailable route.
+Allowed delegation models: large = GPT-6 Astra or GPT-5.6 Sol; medium = GPT-5.6 Terra; small = GPT-5.6 Luna. This list intentionally limits delegation across OpenCodex providers. Use only listed models and reasoning levels actually offered by the active tool; if none are available, proceed directly without repeatedly retrying or substituting another provider model. Use models outside this list only when the user explicitly authorizes them.
 
 Respect explicit user preferences and higher-priority tool constraints. Do not delegate when prohibited or unavailable. A subagent must not create further agents unless recursive delegation is explicitly authorized by the user.
 
