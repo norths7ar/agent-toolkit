@@ -5,20 +5,21 @@ description: Use when work has independently delegable subtasks or the user requ
 
 # Delegation Router
 
-For independently delegable work, consider whether delegation helps and reconsider when scope changes. The primary agent decides whether delegation helps; neither spawning an agent nor narrating that decision is mandatory. Ordinary questions and status checks need no routing ceremony.
+For independently delegable work, consider whether delegation helps and reconsider when scope changes. The primary agent retains discretion. Delegation is encouraged when it adds clear value, but spawning an agent is not itself a success criterion. Ordinary questions and status checks need no routing ceremony.
 
 ## Choose the Team
 
-Choose based on task separability, context-transfer cost, uncertainty, independent-review value, elapsed time, and the user's usage budget. Direct execution is appropriate when handoff would cost more than it helps.
+Choose delegation based on task separability, context-transfer cost, uncertainty, review value, elapsed time, and usage budget. Delegate when it materially improves completion or independence; do not spawn agents for its own sake.
 
-- Large models usually coordinate demanding work. They may also perform implementation or independent adversarial audits of especially complex work.
-- Medium models are the default candidates for delegated implementation and investigation when usage is reasonably available. Optimize for useful completion time, not merely cheap tokens.
-- Small models are optional for bounded, low-complexity or high-volume work when their observed speed and cost fit the task. Do not select them merely because an edit is small. The user has observed Luna to be slow; treat this as a local preference, not a universal benchmark.
-- Choose agent count, reasoning effort, and division of work freely within the exposed tools and task constraints. A complex task may justify a primary agent that only decomposes, coordinates, and accepts work.
+Prefer GPT-family models by default because their roles are better understood locally:
 
-Allowed delegation models: large = GPT-6 Astra or GPT-5.6 Sol; medium = GPT-5.6 Terra; small = GPT-5.6 Luna. This list intentionally limits delegation across OpenCodex providers. Use only listed models and reasoning levels actually offered by the active tool; if none are available, proceed directly without repeatedly retrying or substituting another provider model. Use models outside this list only when the user explicitly authorizes them.
+* **GPT-6 Astra / GPT-5.6 Sol**: complex coordination, difficult implementation, architecture work, high-value review.
+* **GPT-5.6 Terra**: default for most delegated implementation, investigation, and repository work.
+* **GPT-5.6 Luna**: optional for bounded low-complexity or high-volume work; do not choose it solely for lower cost.
 
-Respect explicit user preferences and higher-priority tool constraints. Do not delegate when prohibited or unavailable. A subagent must not create further agents unless recursive delegation is explicitly authorized by the user.
+Other connected models such as DeepSeek or MiMo may also be used when appropriate, but do not force them into GPT-style capability tiers without local evidence. Prefer observed task performance over provider claims, price, or parameter count.
+
+Choose agent count and reasoning effort freely within the active tools and task constraints. Respect explicit user preferences. Do not silently substitute unrelated models when the intended choice is unavailable. Subagents must not recursively delegate unless explicitly authorized.
 
 ## Assign Work
 
@@ -32,4 +33,4 @@ For independent or adversarial review, provide requirements and raw evidence wit
 - Parallelize independent work when useful; respect dependencies and user requests for sequential work.
 - Read actual results before claiming completion. When work fails, revise the assignment, change the route, or take it over based on what was learned.
 - The primary agent owns final acceptance and the user-facing result even when it performs no implementation. Inspect relevant artifacts and evidence, resolve conflicts, and verify proportionally to risk. Do not automatically redo every delegated step.
-- Distinguish verified results from unverified claims and disclose material remaining gaps. Mention delegated contributions when useful to understanding the result.
+- Distinguish verified results from unverified claims and disclose material remaining gaps.

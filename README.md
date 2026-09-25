@@ -5,7 +5,7 @@
 | 目录 | 内容 | 平时在哪里维护 |
 | --- | --- | --- |
 | [instructions](instructions/) | 全局 AGENTS、项目 AGENTS 模板 | 全局规则在 `~/.codex/AGENTS.md`；模板直接在仓库修改 |
-| [skills](skills/) | delegation-router、git-safe-workflow、powershell-safe-invocation | 本机 `~/.agents/skills/` |
+| [skills](skills/) | delegation-router、git-safe-workflow、powershell-safe-invocation、fidelity-aware-implementation、adversarial-fidelity-review | 本机 `~/.agents/skills/` |
 | [mcp](mcp/) | MiMo 视觉 MCP 原型及历史工具 | 直接在仓库修改 |
 | [scripts](scripts/) | 指令与 Skill 的备份入口 | 直接在仓库修改 |
 

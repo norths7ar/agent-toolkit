@@ -2,6 +2,8 @@
   "skills": [
     "delegation-router",
     "powershell-safe-invocation",
-    "git-safe-workflow"
+    "git-safe-workflow",
+    "fidelity-aware-implementation",
+    "adversarial-fidelity-review"
   ]
 }
