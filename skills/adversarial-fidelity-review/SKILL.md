@@ -1,11 +1,11 @@
 ---
 name: adversarial-fidelity-review
-description: Independently review completed copies, ports, migrations, replacements, and substantial refactors for intent drift and lost behavior or contracts. Use for post-implementation fidelity review; requires a separate reviewer subagent and is not a routine style review.
+description: Review completed copies, ports, migrations, replacements, and substantial refactors for lost intent, behavior, or contracts when independent fidelity review is requested or warranted by concrete risk. Requires a separate reviewer subagent.
 ---
 
 # Adversarial Fidelity Review
 
-Assume an implementation may run successfully while inheriting behavior incompletely. Seek verifiable counterexamples. The focus is semantic fidelity, not defending the implementer's design. Review only by default; do not automatically fix, commit, or deploy.
+Choose review separately from implementation delegation, based on the user's request or concrete fidelity risk. Seek verifiable counterexamples to semantic preservation. Review is read-only by default.
 
 ## Independent review
 

@@ -9,21 +9,19 @@ For independently delegable work, consider whether delegation helps and reconsid
 
 ## Choose the Team
 
-Choose delegation based on task separability, context-transfer cost, uncertainty, review value, elapsed time, and usage budget. Delegate when it materially improves completion or independence; do not spawn agents for its own sake.
+Choose delegation for useful cost savings, context isolation, parallel progress, or independent judgment. Weigh these benefits against handoff cost and task uncertainty. Decide implementation delegation and independent review separately.
 
-Prefer GPT-family models by default because their roles are better understood locally:
+Use GPT-family models offered by the active delegation tool, respecting its model-override requirements:
 
-* **GPT-6 Astra / GPT-5.6 Sol**: complex coordination, difficult implementation, architecture work, high-value review.
-* **GPT-5.6 Terra**: default for most delegated implementation, investigation, and repository work.
-* **GPT-5.6 Luna**: optional for bounded low-complexity or high-volume work; do not choose it solely for lower cost.
+* **Terra / Sol**: preferred candidates for delegated implementation and investigation; match the available version to task difficulty.
+* **Astra**: demanding architecture, implementation, or review where its added capability justifies the cost.
+* **Luna**: bounded work when observed speed and quality fit the task.
 
-Other connected models such as DeepSeek or MiMo may also be used when appropriate, but do not force them into GPT-style capability tiers without local evidence. Prefer observed task performance over provider claims, price, or parameter count.
-
-Choose agent count and reasoning effort freely within the active tools and task constraints. Respect explicit user preferences. Do not silently substitute unrelated models when the intended choice is unavailable. Subagents must not recursively delegate unless explicitly authorized.
+Choose agent count and reasoning effort to fit the work and budget. If the preferred model is unavailable, work locally or agree on an alternative with the user. Subagents must not recursively delegate unless explicitly authorized.
 
 ## Assign Work
 
-Give each agent a concrete objective, relevant context and paths, permitted side effects, ownership boundary, and acceptance criteria. Include useful verification commands where known. For model overrides, use the active tool's supported history settings; with the current spawn tool, use `fork_turns: "none"` and a self-contained handoff.
+Give each agent a concrete objective, relevant context and paths, permitted side effects, ownership boundary, and acceptance criteria. Include useful verification commands where known. Use a self-contained handoff and the active tool's clean-context option for context isolation or model overrides.
 
 For independent or adversarial review, provide requirements and raw evidence without planting suspected defects or a preferred verdict. Seek substantiated counterexamples and failure conditions, not a quota of criticisms. Reviews are read-only unless changes are explicitly assigned.
 
