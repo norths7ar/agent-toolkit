@@ -7,8 +7,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path $PSScriptRoot -Parent
-$manifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'agent-config.json') -Raw | ConvertFrom-Json
+$repoRoot = $PSScriptRoot
 
 function Get-SkillFiles([string]$Root) {
     foreach ($entry in Get-ChildItem -LiteralPath $Root -Force) {
@@ -23,10 +22,20 @@ $files = @([pscustomobject]@{
     Source = Join-Path $CodexRoot 'AGENTS.md'
     Target = Join-Path $repoRoot 'instructions/AGENTS.md'
 })
-foreach ($name in $manifest.skills) {
-    if ($name -notmatch '^[a-z0-9]+(-[a-z0-9]+)*$') { throw "Invalid skill name: $name" }
-    $sourceRoot = Join-Path $SkillsRoot $name
-    if (-not (Test-Path -LiteralPath (Join-Path $sourceRoot 'SKILL.md'))) { throw "Missing Skill: $sourceRoot" }
+# Keep locally retained instruction versions alongside the currently used file.
+foreach ($instruction in Get-ChildItem -LiteralPath $CodexRoot -File -Filter '*instructions*.md') {
+    $files += [pscustomobject]@{
+        Source = $instruction.FullName
+        Target = Join-Path $repoRoot "instructions/base-instructions/$($instruction.Name)"
+    }
+}
+$skills = @(Get-ChildItem -LiteralPath $SkillsRoot -Directory -Force | Where-Object {
+    Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf
+})
+foreach ($skill in $skills) {
+    if ($skill.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source: $($skill.FullName)" }
+    $name = $skill.Name
+    $sourceRoot = $skill.FullName
     foreach ($file in Get-SkillFiles $sourceRoot) {
         $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
         $files += [pscustomobject]@{ Source = $file.FullName; Target = Join-Path $repoRoot "skills/$name/$relative" }

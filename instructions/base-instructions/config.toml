@@ -1,0 +1,4 @@
+# 进阶用法：替换 Codex 内置基础指令。
+# 仅展示 override；将这一项合并到现有 config.toml 的顶层，并改为本机实际路径。
+# 本文件不包括其他用户设置项。
+model_instructions_file = "C:/Users/YOUR_USER/.codex/astra-base-instructions.md"
