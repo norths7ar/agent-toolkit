@@ -3,7 +3,8 @@
 param(
     [switch]$Check,
     [string]$SkillsRoot = (Join-Path $env:USERPROFILE '.agents/skills'),
-    [string]$CodexRoot = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' })
+    [string]$CodexRoot = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }),
+    [string]$DshRoot = $(if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' })
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,6 +23,14 @@ $files = @([pscustomobject]@{
     Source = Join-Path $CodexRoot 'AGENTS.md'
     Target = Join-Path $repoRoot 'instructions/AGENTS.md'
 })
+# DSH is optional; collect only its global instructions when present.
+$dshInstructions = Join-Path $DshRoot 'AGENTS.md'
+if (Test-Path -LiteralPath $dshInstructions -PathType Leaf) {
+    $files += [pscustomobject]@{
+        Source = $dshInstructions
+        Target = Join-Path $repoRoot 'instructions/dsh/AGENTS.md'
+    }
+}
 # Keep locally retained instruction versions alongside the currently used file.
 foreach ($instruction in Get-ChildItem -LiteralPath $CodexRoot -File -Filter '*instructions*.md') {
     $files += [pscustomobject]@{

@@ -11,9 +11,10 @@ pwsh -File ./Backup-AgentConfig.ps1 -Check
 pwsh -File ./Backup-AgentConfig.ps1
 ```
 
-`-Check` 只显示差异。支持 `-SkillsRoot`、`-CodexRoot` 指定源目录；Codex 默认目录优先取 `CODEX_HOME`，否则使用 `~/.codex/`。
+`-Check` 只显示差异。支持 `-SkillsRoot`、`-CodexRoot`、`-DshRoot` 指定源目录；Codex 默认目录优先取 `CODEX_HOME`，否则使用 `~/.codex/`；DSH 默认目录优先取 `DSH_HOME`，否则使用 `~/.dsh/`。
 
-- 收集全局 `AGENTS.md`，以及 Codex 目录下名含 `instructions` 的 Markdown 文件，包括保留的旧版本。
+- 收集 Codex 全局 `AGENTS.md`，以及 Codex 目录下名含 `instructions` 的 Markdown 文件，包括保留的旧版本。
+- 将 DSH 全局 `AGENTS.md` 收集到 `instructions/dsh/AGENTS.md`；源文件不存在时跳过，保留已有备份。不收集 DSH 凭据、聊天记录、运行状态、插件依赖或其他配置。
 - 自动发现 Skills 源目录中含 `SKILL.md` 的各个子目录，复制其中的规则和配套资源。新增 Skill 无需维护名单。
 - 延续原有过滤：跳过 Git、依赖和缓存目录、错误收集箱、`local` / `local-config.md`、`.env*` 与私钥文件。
 - 仅更新有差异的文件，不自动删除仓库中已有的文件。项目模板、override 配置示例和 MCP 源码直接在仓库维护。
@@ -21,6 +22,7 @@ pwsh -File ./Backup-AgentConfig.ps1
 ## 换机取用
 
 - `instructions/AGENTS.md` 复制到 `~/.codex/AGENTS.md`。
+- `instructions/dsh/AGENTS.md` 复制到 `~/.dsh/AGENTS.md`；若设置了 `DSH_HOME`，则复制到该目录。恢复后按新机器调整文件中的本机路径。
 - 基础指令按 [override 使用说明](instructions/base-instructions/README.md) 配置。
 - `skills/` 中所需目录复制到 `~/.agents/skills/`；涉及本机路径的配置按对应 Skill 的说明填写。
 - 项目模板从 `instructions/AGENTS.project-template.md` 取用。
