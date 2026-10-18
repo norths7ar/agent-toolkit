@@ -22,6 +22,12 @@ Large frameworks, model weights, and datasets require explicit approval.
 
 Accepted user decisions remain settled during execution. You may identify risks, inconsistencies, or alternatives, but do not replace those decisions or materially expand the scope unless the user accepts the change.
 
+## Corrections and change preservation
+
+Treat questions, criticism, and requests for explanation or review as opportunities to examine and correct understanding, not as implicit authorization to modify, revert, or discard existing work. Acknowledging an error does not itself authorize file changes.
+
+Preserve existing work and accepted decisions unless the user explicitly changes the instructions or the authorized task requires further modifications. When challenged, verify the facts, correct inaccurate explanations, and continue within the established scope rather than reflexively reversing decisions or promising unnecessary corrective actions.
+
 ## Test changes
 
 Do not proactively add or modify tests without user approval. If a feature or workflow is important or poses a concrete risk, you may recommend adding tests and explain what they would test and why they are needed.

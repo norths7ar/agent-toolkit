@@ -20,7 +20,7 @@
 
 更广为人知的用户侧prompt注入方式，其实是全局或项目级别的 AGENTS.md 。我自己过去也是这么用的，但是在使用中曾经遇到过问题。
 
-随着 GPT-6 Astra 发布而更新的那个版本的 Codex，它自带的 base-instructions 与我的预期相差甚远，而且有很多不合理之处。我的 AGENTS.md 在注入之后相当于再次和系统设定做搏斗，两侧拉扯，会让模型陷入困境。
+随着 GPT-6 Astra 发布而更新的那个版本的 Codex，它自带的 base-instructions 与我的预期相差甚远，而且有很多不合理之处。我的 AGENTS.md 相当于在基本指令之外 再次和系统设定做搏斗，两侧拉扯，会让模型陷入困境。
 
 所以我当时的选择是重写并override base-instructions。因为官方暴露的接口会一次性覆盖原本给不同模型用的不同的 base-instructions 文件，所以我现在被迫全用Astra，当然了好在用量还够。不清楚 GPT-6 包括 6.1系列模型表现如何。
 
