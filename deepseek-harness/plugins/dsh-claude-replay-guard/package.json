@@ -1,0 +1,10 @@
+{
+  "name": "dsh-claude-replay-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": "./index.js",
+  "description": "Local OCX Claude context-bound thinking replay guard",
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}
