@@ -284,6 +284,8 @@ Use braces when text immediately follows a variable name:
 "${name}_suffix"
 ```
 
+When a colon immediately follows a variable in an interpolated string, use `"${path}: ..."`, not `"$path: ..."`; PowerShell otherwise interprets the colon as part of a scoped or drive-qualified variable reference.
+
 Use a subexpression for properties:
 
 ```powershell
