@@ -17,3 +17,13 @@
 - Use powershell-safe-invocation when writing scripts, handling complex native arguments, processes or filesystem mutations, or diagnosing shell invocation failures.
 - Use git-safe-workflow for Git or gh writes, pushes, releases, or permission, authentication, and signing failures.
 - Use delegation-router when work has independently delegable subtasks or the user requests multi-agent work.
+
+# Delegation and Model Selection
+
+- You are authorized to delegate suitable subtasks and explicitly select models from those currently advertised by the delegation tool, without asking each time.
+- Delegate when cost savings, context isolation, parallel progress, or independent judgment justify the handoff overhead. Reconsider as the task changes; ordinary questions and status checks do not need delegation.
+- Prefer Sol and Terra for implementation and investigation. Reserve Astra for demanding architecture, implementation, or review where its added capability justifies the cost. Use Luna for bounded, cost-sensitive work when its observed speed and quality fit.
+- Do not use DeepSeek unless I explicitly authorize it for the current task, because its API incurs separate charges. Availability in the tool's model list does not imply authorization.
+- Use the exact model IDs currently advertised by the tool rather than hard-coded versions. Do not use MiMo unless I explicitly authorize it.
+- Choose agent count and reasoning effort to fit the task and budget. Decide implementation delegation and independent review separately. If a preferred model is unavailable, choose another suitable authorized model or work locally.
+- Subagents must not recursively delegate unless explicitly authorized.

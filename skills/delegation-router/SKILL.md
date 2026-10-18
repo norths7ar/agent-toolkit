@@ -1,23 +1,11 @@
 ---
 name: delegation-router
-description: Use when work has independently delegable subtasks or the user requests multi-agent work; choose the team and assign bounded work.
+description: Use when work has independently delegable subtasks or the user requests multi-agent work; assign bounded work, coordinate agents, and verify results.
 ---
 
 # Delegation Router
 
-For independently delegable work, consider whether delegation helps and reconsider when scope changes. The primary agent retains discretion. Delegation is encouraged when it adds clear value, but spawning an agent is not itself a success criterion. Ordinary questions and status checks need no routing ceremony.
-
-## Choose the Team
-
-Choose delegation for useful cost savings, context isolation, parallel progress, or independent judgment. Weigh these benefits against handoff cost and task uncertainty. Decide implementation delegation and independent review separately.
-
-Use GPT-family models offered by the active delegation tool, respecting its model-override requirements:
-
-* **Terra / Sol**: preferred candidates for delegated implementation and investigation; match the available version to task difficulty.
-* **Astra**: demanding architecture, implementation, or review where its added capability justifies the cost.
-* **Luna**: bounded work when observed speed and quality fit the task.
-
-Choose agent count and reasoning effort to fit the work and budget. If the preferred model is unavailable, work locally or agree on an alternative with the user. Subagents must not recursively delegate unless explicitly authorized.
+Follow the applicable AGENTS.md delegation and model-selection policy. This skill covers assignment, coordination, and acceptance.
 
 ## Assign Work
 
