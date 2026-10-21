@@ -1,0 +1,26 @@
+{
+  "name": "dsh-model-guidance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "按模型绑定和编辑行为指导，随模型切换生效。",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": ["index.js", "client.js", "cordis.patch.yml", "locale/*.json"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-layout", "@deepseek-ai/dsh-client-ui-sidebar", "@deepseek-ai/dsh-api-remotes"],
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.5"
+  }
+}
