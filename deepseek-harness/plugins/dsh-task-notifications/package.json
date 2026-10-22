@@ -1,0 +1,26 @@
+{
+  "name": "dsh-task-notifications",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "任务完成、失败或需要处理时，发送系统通知并提示任务栏。",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": ["index.js", "client.js", "flash-taskbar.ps1", "cordis.patch.yml", "locale/*.json"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-layout", "@deepseek-ai/dsh-client-ui-session"],
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.5"
+  }
+}
