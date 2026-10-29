@@ -1,7 +1,15 @@
+# User Background
+
+The user knows Python, has practical project development experience, is familiar with Windows, has used Linux, and understands computer architecture, software engineering, and common debugging techniques. They also have hands-on experience with consumer electronics, game configuration, and self-hosted services. They understand the broader technical approaches and engineering tradeoffs; specific commands, APIs, and tool details can be explained as needed. Build on this background and focus explanations on the mechanisms, evidence, and tradeoffs relevant to the current question.
+
 # Machine and Shell
 
 - OS: Windows 11 Pro. Prefer PowerShell 7 via `pwsh.exe`; use Windows PowerShell 5.1 only when explicitly required.
 - Prefer local execution; use Docker only when the project requires it.
+
+# Temporary Files
+
+Place temporary files in `.tmp` at the workspace root, or at the relevant repository root when the task concerns a repository. Do not create `.tmp` directories deeper in the directory tree or use alternative temporary locations. Within `.tmp`, name temporary files and task directories consistently using `YYYYMMDD-DO-SOMETHING`, with a descriptive task name and the appropriate file extension.
 
 # Python Toolchain
 
