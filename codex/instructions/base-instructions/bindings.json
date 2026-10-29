@@ -1,0 +1,10 @@
+{
+  "gpt-6-astra": "astra-base-instructions.md",
+  "gpt-6.1-sol": "sol-base-instructions.md",
+  "gpt-6-sol": "sol-base-instructions.md",
+  "gpt-5.6-sol": "sol-base-instructions.md",
+  "gpt-6.1-terra": "terra-base-instructions.md",
+  "gpt-5.6-terra": "terra-base-instructions.md",
+  "gpt-6-luna": "luna-base-instructions.md",
+  "gpt-5.6-luna": "luna-base-instructions.md"
+}

@@ -21,21 +21,38 @@ function Get-SkillFiles([string]$Root) {
 
 $files = @([pscustomobject]@{
     Source = Join-Path $CodexRoot 'AGENTS.md'
-    Target = Join-Path $repoRoot 'instructions/AGENTS.md'
+    Target = Join-Path $repoRoot 'codex/instructions/AGENTS.md'
 })
 # DSH is optional; collect only its global instructions when present.
 $dshInstructions = Join-Path $DshRoot 'AGENTS.md'
 if (Test-Path -LiteralPath $dshInstructions -PathType Leaf) {
     $files += [pscustomobject]@{
         Source = $dshInstructions
-        Target = Join-Path $repoRoot 'instructions/dsh/AGENTS.md'
+        Target = Join-Path $repoRoot 'deepseek-harness/instructions/AGENTS.md'
     }
 }
-# Keep locally retained instruction versions alongside the currently used file.
+# Prefer editable model-prompts sources over legacy root-level copies of the same name.
+$promptRoot = Join-Path $CodexRoot 'model-prompts'
+$promptFiles = @()
+if (Test-Path -LiteralPath $promptRoot -PathType Container) {
+    $promptFiles = @(Get-ChildItem -LiteralPath $promptRoot -File -Filter '*.md')
+    $bindingsPath = Join-Path $promptRoot 'bindings.json'
+    if (Test-Path -LiteralPath $bindingsPath -PathType Leaf) {
+        $files += [pscustomobject]@{
+            Source = $bindingsPath
+            Target = Join-Path $repoRoot 'codex/instructions/base-instructions/bindings.json'
+        }
+    }
+}
+$promptNames = @($promptFiles | ForEach-Object Name)
 foreach ($instruction in Get-ChildItem -LiteralPath $CodexRoot -File -Filter '*instructions*.md') {
+    if ($instruction.Name -in $promptNames) { continue }
+    $promptFiles += $instruction
+}
+foreach ($instruction in $promptFiles) {
     $files += [pscustomobject]@{
         Source = $instruction.FullName
-        Target = Join-Path $repoRoot "instructions/base-instructions/$($instruction.Name)"
+        Target = Join-Path $repoRoot "codex/instructions/base-instructions/$($instruction.Name)"
     }
 }
 $skills = @(Get-ChildItem -LiteralPath $SkillsRoot -Directory -Force | Where-Object {
