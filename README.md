@@ -4,10 +4,12 @@
 
 ## 目录入口
 
-- [instructions/](instructions/)：Agent 指令、项目模板和本机指令备份；基础指令的配置方式见[使用说明](instructions/base-instructions/README.md)。
+- [codex/](codex/)：Codex 配置、指令和模型目录准备脚本。
+- [AGENTS.project-template.md](AGENTS.project-template.md)：通用项目指令模板。
+- [docs/](docs/)：使用文章和其他文档，按文档用途组织。
 - [skills/](skills/)：Skills 及其配套资源，具体用途见各目录的 `SKILL.md`。
 - [mcp/](mcp/)：MCP 工具源码，当前保留项目的状态见下方 MCP 小节。
-- [deepseek-harness/](deepseek-harness/)：DSH 本地插件，使用说明和潜在方向集中在下方。
+- [deepseek-harness/](deepseek-harness/)：DSH 全局指令备份和本地插件，插件使用说明和潜在方向集中在下方。
 
 ## 收集本机配置
 
@@ -20,20 +22,43 @@ pwsh -File ./Backup-AgentConfig.ps1
 
 `-Check` 只显示差异。支持 `-SkillsRoot`、`-CodexRoot`、`-DshRoot` 指定源目录；Codex 默认目录优先取 `CODEX_HOME`，否则使用 `~/.codex/`；DSH 默认目录优先取 `DSH_HOME`，否则使用 `~/.dsh/`。
 
-- 收集 Codex 全局 `AGENTS.md`，以及 Codex 目录下名含 `instructions` 的 Markdown 文件，包括保留的旧版本。
-- 将 DSH 全局 `AGENTS.md` 收集到 `instructions/dsh/AGENTS.md`；源文件不存在时跳过，保留已有备份。不收集 DSH 凭据、聊天记录、运行状态、插件依赖或其他配置。
+- 收集 Codex 全局 `AGENTS.md`、`model-prompts/` 下的 Markdown 和 `bindings.json`，以及 Codex 根目录下名含 `instructions` 的 Markdown 文件。同名正文优先收集 `model-prompts/` 中的版本；不收集生成的模型目录与状态记录。
+- 将 DSH 全局 `AGENTS.md` 收集到 `deepseek-harness/instructions/AGENTS.md`；源文件不存在时跳过，保留已有备份。不收集 DSH 凭据、聊天记录、运行状态、插件依赖或其他配置。
 - 自动发现 Skills 源目录中含 `SKILL.md` 的各个子目录，复制其中的规则和配套资源。新增 Skill 无需维护名单。
 - 延续原有过滤：跳过 Git、依赖和缓存目录、错误收集箱、`local` / `local-config.md`、`.env*` 与私钥文件。
 - 仅更新有差异的文件，不自动删除仓库中已有的文件。项目模板、override 配置示例和 MCP 源码直接在仓库维护。
 
 ## 换机取用
 
-- `instructions/AGENTS.md` 复制到 `~/.codex/AGENTS.md`。
-- `instructions/dsh/AGENTS.md` 复制到 `~/.dsh/AGENTS.md`；若设置了 `DSH_HOME`，则复制到该目录。恢复后按新机器调整文件中的本机路径。
-- 基础指令按 [override 使用说明](instructions/base-instructions/README.md) 配置。
+- `codex/instructions/AGENTS.md` 复制到 `~/.codex/AGENTS.md`。
+- `deepseek-harness/instructions/AGENTS.md` 复制到 `~/.dsh/AGENTS.md`；若设置了 `DSH_HOME`，则复制到该目录。恢复后按新机器调整文件中的本机路径。
+- 基础指令按 [override 使用说明](#codex-基础指令) 配置。
 - `skills/` 中所需目录复制到 `~/.agents/skills/`；涉及本机路径的配置按对应 Skill 的说明填写。
-- 项目模板从 `instructions/AGENTS.project-template.md` 取用。
+- 项目模板从 `AGENTS.project-template.md` 取用。
 - MCP 按各自 README 在新目录重建 uv 环境，并使用实际路径注册。
+
+## Codex 基础指令
+
+`codex/instructions/AGENTS.md` 保存本机全局指令副本；`codex/instructions/base-instructions/` 保存各模型的基础指令和精确模型 ID 绑定。当前运行配置仍使用全局 `astra-base-instructions.md`；分模型正文与目录已准备到本机，但尚未启用或验证模型实际表现。
+
+现行全局 override：将选用的正文复制到 `CODEX_HOME`（默认 `~/.codex`），在已有 `config.toml` 顶层设置 `model_instructions_file` 为本机文件绝对路径，然后新开聊天。目录中的 `config.toml` 只是单项示例，不要覆盖完整配置。切换版本时调整引用，取消时移除该项并新开聊天。
+
+### 分模型目录准备
+
+本机 `CODEX_HOME/model-prompts/` 是 Markdown 正文和 `bindings.json` 的日常编辑入口，默认位置为 `~/.codex/model-prompts/`。修改满意后用根目录备份脚本收集回仓库。
+
+[Prepare-ModelCatalog.ps1](codex/scripts/Prepare-ModelCatalog.ps1) 读取本机 `models_cache.json`，保留其中全部模型，仅按绑定替换 `model_messages.instructions_template`，输出 `CODEX_HOME/model-catalog.json`。持续工作模式及其他元数据保持不变；缓存中的账号标识、etag 等外层信息不复制到产物。
+
+```powershell
+pwsh -File ./codex/scripts/Prepare-ModelCatalog.ps1 -Check
+pwsh -File ./codex/scripts/Prepare-ModelCatalog.ps1
+```
+
+`-Check` 只预览，不写文件。可用 `-CodexRoot` 指定本机目录、`-SourceCatalog` 指定上游目录 JSON；默认不联网，使用已有缓存。首次运行只补齐缺失正文和绑定，同名旧正文优先从 Codex 根目录取用，否则使用仓库副本。后续运行保留本机正文和绑定，不用仓库文件覆盖。当前绑定覆盖目录中的 Astra、Sol、Terra、Luna 已知版本，同系列共享正文；新增模型需明确添加绑定，未绑定模型沿用官方指令。
+
+脚本在 `model-prompts/.catalog-state.json` 保存上次生成的哈希。若产物被直接编辑，脚本停止覆盖并报告变化；先核对 JSON，将要保留的正文修改收回 Markdown，再把手工编辑的目录移到备份位置，重新运行。同一正文绑定多个模型时，先协调这些模型的不同改动。上游缓存更新后，重新运行即可合成新元数据和本机正文。
+
+脚本不修改 `config.toml` 或官方缓存，也不启用产物。未来接入时需设置 `model_catalog_json` 为本机产物路径，并移除优先级更高的 `model_instructions_file`；已有 custom 指令聊天不会自动迁移。
 
 ## MCP
 
@@ -46,7 +71,7 @@ pwsh -File ./Backup-AgentConfig.ps1
 
 本机 DSH 安装于 `C:\Users\jnkyl\AppData\Local\Programs\DeepSeek Harness`，配置位于 `~/.dsh`。OCX 是模型 API 代理。开发时不擅自重启两者，不修改原始聊天记录；增改测试前先征得同意。
 
-### 已完成：Claude thinking 回放保护
+### Claude thinking 保护
 
 [dsh-claude-replay-guard](deepseek-harness/plugins/dsh-claude-replay-guard/) 仅处理 `opencodex` provider 下的 Claude 路由。当 system、工具列表或此前历史变化导致旧 thinking 签名失效时，在出站请求副本中有条件移除失效 thinking 和对应 replay 数据，保留正文、工具调用及结果，不修改原始会话或 OCX。
 
@@ -84,7 +109,7 @@ DSH 监听 profile patch，可不重启加载该项；修改 JavaScript 不保�
 
 接口依据为本机 DSH **0.2.1-rc.2**。本机 GUI 加载、保存与切换效果由用户验证：添加指南并填写正文、绑定模型、保存后重新打开确认，再分别选择已绑定和未绑定模型检查行为指导是否随之生效。
 
-### 任务通知（待本机 GUI 验证）
+### 任务通知
 
 [dsh-task-notifications](deepseek-harness/plugins/dsh-task-notifications/) 提供系统通知和 Windows 任务栏闪烁，区分任务完成、失败、等待审批和需要回答问题。主动停止和子任务结束不单独提醒；完成与失败依据回合结束原因，不将运行转为空闲直接视为成功。
 
@@ -94,7 +119,7 @@ DSH 监听 profile patch，可不重启加载该项；修改 JavaScript 不保�
 
 系统通知与任务栏闪烁已分别在本机验证可用，插件整体接入尚待用户验证。安装后点击 **测试提醒**，在 5 秒内切到其他应用观察通知和任务栏，再切回确认闪烁停止；随后用真实任务检查完成、失败和待处理提醒，以及前台当前会话的免打扰行为。接口依据为 DSH **0.2.1-rc.2**。
 
-### 最新消息撤回与修改（待本机 GUI 验证）
+### 最新消息撤回与修改
 
 [dsh-latest-message-edit](deepseek-harness/plugins/dsh-latest-message-edit/) 只处理最新一条用户消息，入口放在消息旁，与 DSH 的复制按钮并排。点击后先停止本轮、等待已发出的工具收尾，再将文字带回输入框修改。更早的消息继续使用 Fork；待发送队列沿用 DSH 自带的编辑和移除。
 
@@ -103,31 +128,3 @@ DSH 监听 profile patch，可不重启加载该项；修改 JavaScript 不保�
 在 DSH 的 **插件 → 添加插件** 中输入本地目录 `E:\Projects\agent-workspace\agent-toolkit\deepseek-harness\plugins\dsh-latest-message-edit`，安装并启用。插件无额外依赖和构建步骤。接口依据为 DSH **0.2.1-rc.2**；消息旁按钮使用局部 DOM 适配，DSH 更新消息布局后可能需要调整。
 
 本机验证由用户操作：分别检查纯文字生成中撤回、工具执行后修改、工具尚未返回时停止，以及取消修改与切换会话后的草稿保留。发送后确认模型使用新要求；已有操作的情况应保留工具记录，不能表现得像此前从未执行。实际运行效果尚未验证。
-
-### 潜在工作方向
-
-以下是需求与候选方向，尚未确定开发顺序。实现依据为 **2026-10-16 对 DSH `0.2.0-rc.2` 安装包代码和随包文档的核查**，未逐项验证运行中的 GUI；升级后需复查相关接口。
-
-**Codex 历史材料**
-
-- 需求：GUI 可展示、搜索和定位完整历史；模型侧仅接收材料简介、按需检索片段或用户选中的几轮，明确区分已导入材料和本轮上下文。可先做关键词检索、按轮读取，配合 Skill 使用材料工具，不要求向量 RAG。其他平台的 thinking、签名和工具记录不作为 DSH 原生续接状态。
-- 已核实：前端支持插件注册右侧标签页和独立主面板，展示材料不必写入原生会话。
-- 待定：布局、导入格式、索引、检索工具及手动选入流程。
-
-**本地 Skill 管理**
-
-- 范围：先做本地管理，不做市场或联网；候选功能为名称、说明、来源、正文查看和打开编辑，导入可选。
-- 已核实：DSH 已发现用户级及项目级 `.agents/skills`、`.dsh/skills`、自定义目录和内置 Skills，实际会话也已使用共享 Skills，无需重做发现或复制导入。
-- 待定：最小 GUI 范围及是否提供启停。若做启停，先检查 DSH 筛选配置，不通过搬走共享文件影响 Codex。
-
-**上下文可视化**
-
-- 需求方向：近似展示占用和组成即可。
-- 已核实：内置 `dsh-token-meter` 和 GUI 已提供近似占用率及系统提示词、工具、对话三类组成。
-- 待定：先查看现有界面是否满足用途，再决定补什么，不重建统计系统。
-
-### 已有能力与暂缓事项
-
-- 思考档位已有 GUI→会话→适配器的实现，无需重做；与 OCX 模型目录实时同步的机制未确认。
-- 侧边提问和引用追问暂用分支替代；历史时间线、项目级长期记忆暂缓。
-- 当前不需要预算上限或 MCP 图形管理；余额查询取决于可用接口，PTC 先评估收益。
