@@ -7,7 +7,8 @@ description: Use for Git or gh writes, pushes, releases, or permission, authenti
 
 - If git fails due to sandbox-inaccessible permissions, credentials, or signing keys, escalate and retry outside the sandbox; do not disable commit signing.
 - Do not manually modify ACL or NTFS permissions on `.git` or project folders.
-- Use conventional commit prefixes and keep commits focused; add a short body only when useful.
+- Use conventional commit prefixes; add a short body only when useful.
+- Keep commits focused on a single logical change, including its related code, configuration, and documentation.
 - If `gh` authentication fails inside the sandbox, retry with sandbox-external execution before re-authenticating.
 
 ## Push Targets
