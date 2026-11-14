@@ -32,37 +32,42 @@ window.__ModuleLoader__.load({
       const lifetime = new AbortController();
       const timers = new Set();
       const notifications = new Set();
-      const send = globalThis.__DSH_TRANSPORT__?.fetch
-        ?? ((input, init) => globalThis.fetch(input, init));
+      const send =
+        globalThis.__DSH_TRANSPORT__?.fetch ?? ((input, init) => globalThis.fetch(input, init));
       const update = (patch) => {
         state = { ...state, ...patch };
         for (const listener of listeners) listener();
       };
-      const pause = (ms) => new Promise(resolve => {
-        const finish = () => {
-          clearTimeout(timer);
-          timers.delete(timer);
-          lifetime.signal.removeEventListener("abort", finish);
-          resolve();
-        };
-        const timer = setTimeout(finish, ms);
-        timers.add(timer);
-        lifetime.signal.addEventListener("abort", finish, { once: true });
-        if (lifetime.signal.aborted) finish();
-      });
+      const pause = (ms) =>
+        new Promise((resolve) => {
+          const finish = () => {
+            clearTimeout(timer);
+            timers.delete(timer);
+            lifetime.signal.removeEventListener("abort", finish);
+            resolve();
+          };
+          const timer = setTimeout(finish, ms);
+          timers.add(timer);
+          lifetime.signal.addEventListener("abort", finish, { once: true });
+          if (lifetime.signal.aborted) finish();
+        });
       const request = async (action, data) => {
         const response = await send(`${API}/${action}`, {
-          method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify(data), signal: lifetime.signal,
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(data),
+          signal: lifetime.signal,
         });
         if (!response.ok) throw new Error(`提醒服务返回 ${response.status}`);
         return response.json();
       };
       const inForeground = () => document.visibilityState === "visible" && document.hasFocus();
-      const viewing = (sessionId) => sessionId !== undefined && inForeground()
-        && (ctx.layout.panelInfo.getSnapshot().activePanelId ?? "conversation") === "conversation"
-        && !document.querySelector('[data-shortcut-modal="settings"]')
-        && ctx.uiSession.current.getSnapshot().key === sessionId;
+      const viewing = (sessionId) =>
+        sessionId !== undefined &&
+        inForeground() &&
+        (ctx.layout.panelInfo.getSnapshot().activePanelId ?? "conversation") === "conversation" &&
+        !document.querySelector('[data-shortcut-modal="settings"]') &&
+        ctx.uiSession.current.getSnapshot().key === sessionId;
 
       async function deliver(event, test = false) {
         if (lifetime.signal.aborted) return;
@@ -73,15 +78,21 @@ window.__ModuleLoader__.load({
           if (!test && (!preferences[event.kind] || viewing(event.sessionId))) return null;
           return {
             preferences,
-            canNotify: preferences.systemNotification
-              && typeof Notification !== "undefined" && Notification.permission === "granted",
+            canNotify:
+              preferences.systemNotification &&
+              typeof Notification !== "undefined" &&
+              Notification.permission === "granted",
             canFlash: preferences.taskbarFlash && !inForeground(),
           };
         };
         let eligible = eligibility();
         if (!eligible) return;
         if (!eligible.canNotify && !eligible.canFlash) {
-          if (test) update({ message: "没有可用的提醒渠道。请检查通知权限，或切到其他应用后再测试。", error: true });
+          if (test)
+            update({
+              message: "没有可用的提醒渠道。请检查通知权限，或切到其他应用后再测试。",
+              error: true,
+            });
           return;
         }
         if (!test) {
@@ -95,13 +106,16 @@ window.__ModuleLoader__.load({
         if (canNotify) {
           try {
             const notice = new Notification(titles[event.kind], {
-              body: test ? "这是一条测试提醒。" : [event.title, event.detail].filter(Boolean).join("\n"),
+              body: test
+                ? "这是一条测试提醒。"
+                : [event.title, event.detail].filter(Boolean).join("\n"),
               tag: event.id,
             });
             notifications.add(notice);
             notice.onclose = () => notifications.delete(notice);
             notice.onclick = () => notice.close();
-            notice.onerror = () => update({ message: "系统通知未能显示。可通过测试提醒重试。", error: true });
+            notice.onerror = () =>
+              update({ message: "系统通知未能显示。可通过测试提醒重试。", error: true });
             results.push("已请求系统通知");
           } catch {
             results.push("系统通知发送失败");
@@ -110,9 +124,13 @@ window.__ModuleLoader__.load({
         if (canFlash) {
           try {
             const result = await request("flash", test ? { test: true } : { id: event.id });
-            results.push(result.status === "requested" ? "已请求任务栏闪烁"
-              : result.status === "foreground" ? "DSH 已在前台，未闪烁"
-              : "任务栏闪烁不可用");
+            results.push(
+              result.status === "requested"
+                ? "已请求任务栏闪烁"
+                : result.status === "foreground"
+                  ? "DSH 已在前台，未闪烁"
+                  : "任务栏闪烁不可用",
+            );
           } catch {
             results.push("任务栏闪烁调用失败");
           }
@@ -121,47 +139,40 @@ window.__ModuleLoader__.load({
       }
 
       async function listen() {
+        let cursor;
         while (!lifetime.signal.aborted) {
           try {
-            const response = await send(`${API}/events`, { signal: lifetime.signal });
-            if (!response.ok || !response.body) throw new Error("提醒事件连接不可用");
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let pending = "";
-            let queue = Promise.resolve();
-            update({ connected: true });
-            try {
-              while (!lifetime.signal.aborted) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                pending += decoder.decode(value, { stream: true });
-                let end;
-                while ((end = pending.indexOf("\n")) !== -1) {
-                  const line = pending.slice(0, end);
-                  pending = pending.slice(end + 1);
-                  if (!line.startsWith("data: ")) continue;
-                  const event = JSON.parse(line.slice(6));
-                  if (!titles[event.kind]) continue;
-                  queue = queue.then(() => deliver(event)).catch(error => {
-                    if (!lifetime.signal.aborted) update({ message: error.message, error: true });
-                  });
-                }
+            const query = cursor === undefined ? "" : `?cursor=${encodeURIComponent(cursor)}`;
+            const response = await send(`${API}/events${query}`, { signal: lifetime.signal });
+            if (!response.ok) throw new Error("提醒事件连接不可用");
+            const batch = await response.json();
+            cursor = batch.cursor;
+            if (!state.connected && !lifetime.signal.aborted) update({ connected: true });
+            for (const event of batch.events) {
+              if (!titles[event.kind]) continue;
+              try {
+                await deliver(event);
+              } catch (error) {
+                if (!lifetime.signal.aborted) update({ message: error.message, error: true });
               }
-            } finally {
-              await reader.cancel().catch(() => {});
-              reader.releaseLock();
             }
           } catch (error) {
             if (!lifetime.signal.aborted) console.warn("[task-notifications]", error.message);
+            // A real reconnect starts a fresh live subscription, like the old
+            // SSE channel; successful bounded request rotation keeps its cursor.
+            cursor = undefined;
+            update({ connected: false });
+            if (!lifetime.signal.aborted) await pause(3000);
           }
-          update({ connected: false });
-          if (!lifetime.signal.aborted) await pause(3000);
         }
       }
 
       return {
         getSnapshot: () => state,
-        subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+        subscribe(listener) {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
         start() {
           void listen();
           return () => {
@@ -174,22 +185,28 @@ window.__ModuleLoader__.load({
           if (state.testing) return;
           update({ testing: true, message: "", error: false });
           try {
-            if (form.getSnapshot().value?.systemNotification
-              && typeof Notification !== "undefined" && Notification.permission === "default") {
+            if (
+              form.getSnapshot().value?.systemNotification &&
+              typeof Notification !== "undefined" &&
+              Notification.permission === "default"
+            ) {
               await Notification.requestPermission();
             }
             update({ message: "5 秒后发送，请切到其他应用观察通知和任务栏。" });
             await pause(5000);
-            if (!lifetime.signal.aborted) await deliver({ kind: "test", id: `dtn-test-${Date.now()}` }, true);
+            if (!lifetime.signal.aborted)
+              await deliver({ kind: "test", id: `dtn-test-${Date.now()}` }, true);
           } catch (error) {
             if (!lifetime.signal.aborted) update({ message: error.message, error: true });
-          } finally { update({ testing: false }); }
+          } finally {
+            update({ testing: false });
+          }
         },
       };
     }
 
     function Settings({ form, runtime }) {
-      const subscribe = React.useCallback(listener => form.subscribe(listener), [form]);
+      const subscribe = React.useCallback((listener) => form.subscribe(listener), [form]);
       const read = React.useCallback(() => form.getSnapshot(), [form]);
       const snapshot = React.useSyncExternalStore(subscribe, read);
       const status = React.useSyncExternalStore(runtime.subscribe, runtime.getSnapshot);
@@ -201,39 +218,97 @@ window.__ModuleLoader__.load({
         setSaving(field);
         setError("");
         try {
-          if (field === "systemNotification" && value
-            && typeof Notification !== "undefined" && Notification.permission === "default") {
+          if (
+            field === "systemNotification" &&
+            value &&
+            typeof Notification !== "undefined" &&
+            Notification.permission === "default"
+          ) {
             await Notification.requestPermission();
           }
-          if (!await form.set(field, value)) setError("设置未保存，请重试。");
-        } catch { setError("设置未保存，请重试。"); }
-        finally { setSaving(null); }
+          if (!(await form.set(field, value))) setError("设置未保存，请重试。");
+        } catch {
+          setError("设置未保存，请重试。");
+        } finally {
+          setSaving(null);
+        }
       }
       function row(field, label, description) {
-        return h("div", { className: "dtn-row", key: field },
-          h("div", null, h("div", null, label), description && h("p", { className: "dtn-muted" }, description)),
-          h(Switch, { checked: snapshot.value?.[field] ?? false, disabled, label, onChange: value => change(field, value) }));
+        return h(
+          "div",
+          { className: "dtn-row", key: field },
+          h(
+            "div",
+            null,
+            h("div", null, label),
+            description && h("p", { className: "dtn-muted" }, description),
+          ),
+          h(Switch, {
+            checked: snapshot.value?.[field] ?? false,
+            disabled,
+            label,
+            onChange: (value) => change(field, value),
+          }),
+        );
       }
-      return h("section", { className: "dtn-settings", "aria-label": "任务通知" },
+      return h(
+        "section",
+        { className: "dtn-settings", "aria-label": "任务通知" },
         h("h2", null, "任务通知"),
         h("p", { className: "dtn-muted" }, "正在查看当前会话时不提醒。设置更改后自动保存。"),
-        !ready && h("p", { role: "status" }, snapshot.status === "unavailable" ? "插件配置不可用。" : "正在加载设置…"),
+        !ready &&
+          h(
+            "p",
+            { role: "status" },
+            snapshot.status === "unavailable" ? "插件配置不可用。" : "正在加载设置…",
+          ),
         ready && !snapshot.writable && h("p", { role: "status" }, "当前配置为只读。"),
         h("h3", null, "提醒方式"),
         row("systemNotification", "系统通知", "显示任务结果或待处理事项。"),
         row("taskbarFlash", "任务栏闪烁", "DSH 在后台时闪烁，切回应用后停止。"),
         h("h3", null, "提醒内容"),
-        row("completed", "任务完成"), row("failed", "任务失败"),
-        row("approval", "等待审批"), row("question", "需要回答问题"),
-        h("div", { className: "dtn-footer" },
-          h(Button, { variant: "outline", disabled: !ready || status.testing
-            || (!snapshot.value?.systemNotification && !snapshot.value?.taskbarFlash),
-          onClick: () => runtime.test() }, status.testing ? "正在测试…" : "测试提醒"),
-          h("span", { className: "dtn-muted", role: "status" }, status.connected ? "提醒服务已连接" : "正在连接提醒服务…")),
-        typeof Notification !== "undefined" && Notification.permission === "denied"
-          && h("p", { className: "dtn-muted dtn-feedback" }, "系统通知权限已关闭，开启权限后可再次测试。"),
-        (error || status.message) && h("p", { className: `dtn-feedback ${(error || status.error) ? "dtn-error" : "dtn-muted"}`,
-          role: error || status.error ? "alert" : "status" }, error || status.message));
+        row("completed", "任务完成"),
+        row("failed", "任务失败"),
+        row("approval", "等待审批"),
+        row("question", "需要回答问题"),
+        h(
+          "div",
+          { className: "dtn-footer" },
+          h(
+            Button,
+            {
+              variant: "outline",
+              disabled:
+                !ready ||
+                status.testing ||
+                (!snapshot.value?.systemNotification && !snapshot.value?.taskbarFlash),
+              onClick: () => runtime.test(),
+            },
+            status.testing ? "正在测试…" : "测试提醒",
+          ),
+          h(
+            "span",
+            { className: "dtn-muted", role: "status" },
+            status.connected ? "提醒服务已连接" : "正在连接提醒服务…",
+          ),
+        ),
+        typeof Notification !== "undefined" &&
+          Notification.permission === "denied" &&
+          h(
+            "p",
+            { className: "dtn-muted dtn-feedback" },
+            "系统通知权限已关闭，开启权限后可再次测试。",
+          ),
+        (error || status.message) &&
+          h(
+            "p",
+            {
+              className: `dtn-feedback ${error || status.error ? "dtn-error" : "dtn-muted"}`,
+              role: error || status.error ? "alert" : "status",
+            },
+            error || status.message,
+          ),
+      );
     }
 
     function apply(ctx) {
@@ -247,10 +322,18 @@ window.__ModuleLoader__.load({
         document.head.append(tag);
         return () => tag.remove();
       });
-      ctx.slots.inject("settings.section", () => ctx.slots.register({
-        name: "settings.section", id: ENTRY, order: 40,
-        label: () => "任务通知", inject: () => ({ form, runtime }),
-      }, Settings));
+      ctx.slots.inject("settings.section", () =>
+        ctx.slots.register(
+          {
+            name: "settings.section",
+            id: ENTRY,
+            order: 40,
+            label: () => "任务通知",
+            inject: () => ({ form, runtime }),
+          },
+          Settings,
+        ),
+      );
     }
     return { apply, inject: ["slots", "configForms", "layout", "uiSession"] };
   },

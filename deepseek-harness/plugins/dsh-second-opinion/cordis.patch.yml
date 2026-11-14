@@ -1,0 +1,4 @@
+- insert:
+    - id: local-second-opinion
+      name: dsh-second-opinion
+      config: {}
