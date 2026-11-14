@@ -18,7 +18,14 @@ Place temporary files in `.tmp` at the workspace root, or at the relevant reposi
 - Reserve Conda for GPU or binary-heavy stacks. Do not rely on `conda activate`; use `conda run --no-capture-output -n <env> ...`.
 - For new projects, prefer the latest stable Python version supported by required dependencies; do not target legacy Python versions proactively.
 - Prefer modern Python APIs and idioms available in the project's supported Python versions, such as pathlib.Path over os.path.
-- Use Ruff for new Python projects when no formatter or linter is configured.
+
+# Formatting and Linting
+
+- Default to Ruff for Python linting, import sorting, and formatting; ESLint and Prettier for JavaScript/TypeScript linting and formatting. Follow existing project tooling and configuration.
+- Default configuration sources are in `E:/Projects/agent-workspace/machine-rebuild/`: `ruff.toml`, `prettier.config.json`, and `eslint.config.mjs`. When establishing project tooling, copy the relevant files into the project configuration root; rename `prettier.config.json` to `.prettierrc.json`.
+- Adapt the copied configuration to the project's Python version, JavaScript/TypeScript usage, runtime, framework, and generated files. Add the required tools as project development dependencies and use the project's lockfile and commands.
+- Tool version baselines are maintained in `E:/Projects/agent-workspace/machine-rebuild/tooling-versions.json`. When establishing or explicitly aligning project tooling, use those exact versions as development dependencies and update the project lockfile. Choose compatible versions of any required ESLint plugins. During ordinary development, use the project's locked versions. Maintain shared defaults and version baselines together in `machine-rebuild`.
+- As part of completing code changes, run lint, resolve issues relevant to the changes, and format the affected files. Review the resulting diff. Keep repository-wide formatting separate from ordinary implementation work.
 
 # Skill Routing
 
