@@ -1,0 +1,3 @@
+[submodule "dsh-model-guidance"]
+	path = deepseek-harness/plugins/dsh-model-guidance
+	url = git@github.com:norths7ar/dsh-model-guidance.git

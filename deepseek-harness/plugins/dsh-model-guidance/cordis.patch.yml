@@ -1,4 +1,0 @@
-- insert:
-    - id: local-model-guidance
-      name: dsh-model-guidance
-      config: {}

@@ -36,6 +36,7 @@ pwsh -File ./Backup-AgentConfig.ps1
 - `skills/` 中所需目录复制到 `~/.agents/skills/`；涉及本机路径的配置按对应 Skill 的说明填写。
 - 项目模板从 `AGENTS.project-template.md` 取用。
 - MCP 按各自 README 在新目录重建 uv 环境，并使用实际路径注册。
+- 独立插件通过 submodule 记录版本，克隆后运行 `git submodule update --init --recursive` 获取对应源码。
 
 ## Codex 基础指令
 
@@ -92,26 +93,13 @@ DSH 监听 profile patch，可不重启加载该项；修改 JavaScript 不保�
 
 已做离线验证并曾确认 active；2026-10-16 仍看到加载配置，当前运行状态需按需查询。插件不自动丢弃安装前未知的签名，因此不能识别所有发生在安装前的失效情况。
 
-### 按模型切换行为指导
+### 模型行为指南
 
-[dsh-model-guidance](deepseek-harness/plugins/dsh-model-guidance/) 按 `provider ID + model ID` 精确绑定行为指导，一份正文可供多个模型使用。设置页支持新增、编辑、删除和绑定模型，正文与绑定一起保存。正文由用户填写；未绑定或正文为空时沿用 DSH 原有角色前缀。
+本插件独立维护于 `norths7ar/dsh-model-guidance`，此处目录是 submodule。本工作区的开发与 DSH 安装引用指向 `../deepseek-harness/dsh-model-guidance`；此处 checkout 只记录选定提交，更新时先提交独立仓库，再更新 submodule 指针。推送父仓库前，应先将对应插件提交推送到插件的两个远端。
 
-插件只替换 `deployment:persona-prefix`，保留模式、工具、AGENTS 和 Skills 的指导。正文按原文使用，不展开模板变量；完整提示词覆盖的 minimal preset 保持原样。模型选择和正文保存均在下一次提示词组装时生效，已组装的步骤不变，不必等到下一条用户消息。不提供任务预设或自动模型家族匹配。
+[dsh-model-guidance](deepseek-harness/plugins/dsh-model-guidance/README.md) 按 Provider ID 和 Model ID 精确绑定行为指南，一份指南可供多个模型使用。通过侧栏管理指南、按需选择模型，统一保存正文与绑定。界面支持中英文并沿用 DSH 组件；配置 ID 保持为 `local-model-guidance`。
 
-在 DSH 左侧打开 **插件 → 添加插件**，输入本地插件目录 `E:\Projects\agent-workspace\agent-toolkit\deepseek-harness\plugins\dsh-model-guidance`，安装后选择启用。安装包装包含 bundle patch 和中文显示信息；前端复用 DSH 的 React、主面板、侧栏和模型目录，无构建步骤。通过左侧导航的 **模型行为指南** 打开独立编辑页面，不再通过设置弹窗进入。
-
-已有旧版直接加载项时，先安装但暂不启用。将 `~/.dsh/profiles/desktop/cordis.patch.yml` 中该插件的旧 `insert` 项改为下方顶层配置覆盖，原有 `config` 内容完整保留，只去掉旧 `file:` 加载路径；再从插件页启用。这样仍使用同一配置 ID，不会重复加载或丢失正文和绑定。若旧 `insert` 还包含其他插件，只移出本插件项。
-
-```yaml
-- id: local-model-guidance
-  config: {} # 换成原项完整的 config；已有内容不要清空。
-```
-
-插件使用固定配置 ID `local-model-guidance`。配置由 DSH Settings 保存到 profile，仓库不预填提示词。已选模型集中显示为可移除卡片，搜索仅按名称、ID 和 provider 过滤候选，绑定仍是精确匹配。模型已绑定其他指南时先解除旧绑定；目录里暂时消失的模型仍可解除绑定。
-
-页面底部统一提供“放弃修改”和“应用”。切换到聊天或其他主页面后再回来，未应用的草稿仍保留；只有应用才写入配置，刷新应用或卸载插件不保证保留草稿。仅开发或继续直接加载时，在插件目录运行 `npm ci --ignore-scripts` 准备依赖；不同时启用直接加载与 bundle 加载。
-
-已核对本机 DSH **0.2.2-rc.3** 的提示词、模型目录和配置接口，实际页面与模型列表加载正常，离线模拟请求确认绑定指南进入对应模型上下文。完整保存与切换流程仍需实际使用验证：添加指南并填写正文、绑定模型、保存后重新打开确认，再分别选择已绑定和未绑定模型检查行为指导是否随之生效。
+当前核对宿主为 DSH Desktop **0.2.2-rc.3**。插件只替换角色前缀，保留其他系统提示词；未绑定或正文为空时沿用默认内容。安装、使用、生效范围与开发命令见[插件文档](deepseek-harness/plugins/dsh-model-guidance/README.md)。采用 MIT，当前仍在本地目录准备独立发布。
 
 ### 任务通知
 
