@@ -5,12 +5,28 @@
   "type": "module",
   "description": "撤回或修改最新用户消息，保留已执行操作。",
   "main": "index.js",
-  "exports": { ".": "./index.js", "./client": "./client.js", "./package.json": "./package.json", "./cordis.patch.yml": "./cordis.patch.yml" },
-  "files": ["index.js", "history.js", "client.js", "cordis.patch.yml"],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "index.js",
+    "history.js",
+    "client.js",
+    "cordis.patch.yml"
+  ],
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
-      "inject": ["@deepseek-ai/dsh-client-ui-conversation", "@deepseek-ai/dsh-client-ui-chat", "@deepseek-ai/dsh-client-ui-session"],
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-chat",
+        "@deepseek-ai/dsh-client-ui-session"
+      ],
       "platform": "web"
     }
   }
