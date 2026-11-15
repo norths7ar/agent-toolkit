@@ -1,4 +1,0 @@
-- insert:
-    - id: local-task-notifications
-      name: dsh-task-notifications
-      config: {}

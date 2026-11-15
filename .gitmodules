@@ -1,3 +1,6 @@
 [submodule "dsh-model-guidance"]
 	path = deepseek-harness/plugins/dsh-model-guidance
 	url = git@github.com:norths7ar/dsh-model-guidance.git
+[submodule "dsh-task-notifications"]
+	path = deepseek-harness/plugins/dsh-task-notifications
+	url = git@github.com:norths7ar/dsh-task-notifications.git

@@ -97,19 +97,19 @@ DSH 监听 profile patch，可不重启加载该项；修改 JavaScript 不保�
 
 本插件独立维护于 `norths7ar/dsh-model-guidance`，此处目录是 submodule。本工作区的开发与 DSH 安装引用指向 `../deepseek-harness/dsh-model-guidance`；此处 checkout 只记录选定提交，更新时先提交独立仓库，再更新 submodule 指针。推送父仓库前，应先将对应插件提交推送到插件的两个远端。
 
-[dsh-model-guidance](deepseek-harness/plugins/dsh-model-guidance/README.md) 按 Provider ID 和 Model ID 精确绑定行为指南，一份指南可供多个模型使用。通过侧栏管理指南、按需选择模型，统一保存正文与绑定。界面支持中英文并沿用 DSH 组件；配置 ID 保持为 `local-model-guidance`。
+[dsh-model-guidance](deepseek-harness/plugins/dsh-model-guidance/README.md) 按提供商 ID 和模型 ID 精确绑定提示词，一份提示词可供多个模型使用。通过侧栏管理提示词、按需选择模型，支持单条保存和保存全部。界面支持中英文并沿用 DSH 组件；配置 ID 保持为 `local-model-guidance`。
 
-当前核对宿主为 DSH Desktop **0.2.2-rc.3**。插件只替换角色前缀，保留其他系统提示词；未绑定或正文为空时沿用默认内容。安装、使用、生效范围与开发命令见[插件文档](deepseek-harness/plugins/dsh-model-guidance/README.md)。采用 MIT，当前仍在本地目录准备独立发布。
+当前核对宿主为 DSH Desktop **0.2.2-rc.3**。插件仅在标准模式替换角色前缀，子智能体按自己的模式判断；未绑定或正文为空时沿用默认内容。支持 `{{model}}` 和 `{{provider}}` 占位符。已发布至 GitHub，采用 MIT；安装、使用、生效范围与开发命令见[插件文档](deepseek-harness/plugins/dsh-model-guidance/README.md)。
 
 ### 任务通知
 
-[dsh-task-notifications](deepseek-harness/plugins/dsh-task-notifications/) 提供系统通知和 Windows 任务栏闪烁，区分任务完成、失败、等待审批和需要回答问题。主动停止和子任务结束不单独提醒；完成与失败依据回合结束原因，不将运行转为空闲直接视为成功。
+[dsh-task-notifications](deepseek-harness/plugins/dsh-task-notifications/README.md) 独立维护于 `norths7ar/dsh-task-notifications`，此处目录是 submodule。开发与本机 DSH 安装引用指向 `../deepseek-harness/dsh-task-notifications`。插件提供任务完成、失败、等待审批和需要回答问题四类系统通知；主动停止和子任务结束不单独提醒。
 
-在 DSH 的 **插件 → 添加插件** 中输入本地目录 `E:\Projects\agent-workspace\agent-toolkit\deepseek-harness\plugins\dsh-task-notifications`，安装并启用。通过 **设置 → 任务通知** 调整两种提醒方式和四类事件，默认全部开启，更改后自动保存。插件无构建步骤；本地开发可运行 `npm ci --ignore-scripts` 准备依赖。
+通过 **设置 → 任务通知** 调整系统通知和四类事件，默认全部开启，更改后自动保存。安装、使用和开发命令见[插件文档](deepseek-harness/plugins/dsh-task-notifications/README.md)。
 
-前台查看事件所属会话时不提醒；在前台查看其他页面时发送系统通知；应用在后台时同时提示任务栏。切回 DSH 后停止闪烁。重新连接不补发旧事件，通知不承诺点击唤起或定位会话。Windows 辅助调用使用 PowerShell 7，不修改 DSH 本体、快捷方式或通知注册。
+任一前台窗口正在查看事件所属会话时不提醒；在前台查看其他页面时显示页内提醒；应用在后台时发送系统通知。多个窗口通过宿主统一认领，同一事件只投递一次。点击系统通知可唤起 DSH 并打开对应会话，页内提醒也可跳转。连续运行的任务在运行结束后，根据最后一轮的结束原因通知。重新连接不补发旧事件。
 
-当前适配 DSH **0.2.2-rc.3**。通知使用最长 3 秒的有界请求，正常请求轮转通过游标衔接，避免永久连接阻塞桌面更新。离线验证覆盖主会话筛选、跨窗口去重、审批失效和连接生命周期。系统通知与任务栏闪烁此前已分别在本机验证可用；安装后可点击 **测试提醒**，在 5 秒内切到其他应用观察通知和任务栏，再用真实任务检查各类提醒与前台当前会话的免打扰行为。
+当前适配 DSH **0.2.2-rc.3**。通知使用最长 3 秒的有界请求，正常请求轮转通过游标衔接，避免永久连接阻塞桌面更新。离线验证覆盖主会话筛选、跨窗口去重、审批失效和连接生命周期；系统通知、点击唤起和会话跳转已在本机验证。GitHub 链接已通过隔离 profile 的 DSH 安装与加载验证。安装后可点击 **测试提醒**，在 5 秒内切到其他应用观察通知。
 
 ### 最新消息撤回与修改
 
