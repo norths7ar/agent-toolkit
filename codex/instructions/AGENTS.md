@@ -4,28 +4,34 @@ The user knows Python, has practical project development experience, is familiar
 
 # Machine and Shell
 
-- OS: Windows 11 Pro. Prefer PowerShell 7 via `pwsh.exe`; use Windows PowerShell 5.1 only when explicitly required.
-- Prefer local execution; use Docker only when the project requires it.
+OS: Windows 11 Pro. Prefer PowerShell 7 via `pwsh.exe`; use Windows PowerShell 5.1 only when explicitly required.
 
 # Temporary Files
 
 Place temporary files in `.tmp` at the workspace root, or at the relevant repository root when the task concerns a repository. Do not create `.tmp` directories deeper in the directory tree or use alternative temporary locations. Within `.tmp`, name temporary files and task directories consistently using `YYYYMMDD-DO-SOMETHING`, with a descriptive task name and the appropriate file extension.
 
-# Python Toolchain
+# Development Toolchain
 
+- Shared runtime and development-tool baselines are maintained in `E:/Projects/agent-workspace/machine-rebuild/tooling-versions.json`, alongside the default configurations. Use these versions when creating projects or explicitly aligning development environments and project tooling.
+- Record adopted runtime and package-manager versions in the project's appropriate configuration. Add linting and formatting tools as exact development dependencies and update the project lockfile. During ordinary development, follow existing project tooling, configuration, declared versions, lockfiles, and commands, and verify that the invoked tools match them.
+- When updating the shared baselines, check current stable releases and relevant dependency compatibility. Installed versions are not a reason to retain an older baseline. Updating the shared baseline does not automatically upgrade existing projects.
+- As part of completing code changes, run lint, resolve issues relevant to the changes, and format the affected files. Review the resulting diff. Keep repository-wide formatting separate from ordinary implementation work.
+
+## Python
+
+- For new projects, use the Python version in the shared baseline. Use another version when required by a concrete dependency or deployment constraint, and explain the reason.
+- Prefer modern Python APIs and idioms available in the project's supported Python versions, such as pathlib.Path over os.path.
 - Use uv by default for Python projects and respect the project's `pyproject.toml`, `uv.lock`, and `.python-version`. Never install Python packages globally.
 - If `uv` is unavailable on PATH, use `C:/Users/jnkyl/.local/bin/uv.exe`.
-- Reserve Conda for GPU or binary-heavy stacks. Do not rely on `conda activate`; use `conda run --no-capture-output -n <env> ...`.
-- For new projects, prefer the latest stable Python version supported by required dependencies; do not target legacy Python versions proactively.
-- Prefer modern Python APIs and idioms available in the project's supported Python versions, such as pathlib.Path over os.path.
+- Retain existing Conda environments for projects that use them; use uv for new Python projects. When invoking Conda environments, use `conda run --no-capture-output -n <env> ...` rather than relying on `conda activate`.
+- Default to Ruff for linting, import sorting, and formatting. When establishing project tooling, copy `E:/Projects/agent-workspace/machine-rebuild/ruff.toml` into the project configuration root and adapt it to the project's Python version and generated files.
 
-# Formatting and Linting
+## JavaScript and TypeScript
 
-- Default to Ruff for Python linting, import sorting, and formatting; ESLint and Prettier for JavaScript/TypeScript linting and formatting. Follow existing project tooling and configuration.
-- Default configuration sources are in `E:/Projects/agent-workspace/machine-rebuild/`: `ruff.toml`, `prettier.config.json`, and `eslint.config.mjs`. When establishing project tooling, copy the relevant files into the project configuration root; rename `prettier.config.json` to `.prettierrc.json`.
-- Adapt the copied configuration to the project's Python version, JavaScript/TypeScript usage, runtime, framework, and generated files. Add the required tools as project development dependencies and use the project's lockfile and commands.
-- Tool version baselines are maintained in `E:/Projects/agent-workspace/machine-rebuild/tooling-versions.json`. When establishing or explicitly aligning project tooling, use those exact versions as development dependencies and update the project lockfile. Choose compatible versions of any required ESLint plugins. During ordinary development, use the project's locked versions. Maintain shared defaults and version baselines together in `machine-rebuild`.
-- As part of completing code changes, run lint, resolve issues relevant to the changes, and format the affected files. Review the resulting diff. Keep repository-wide formatting separate from ordinary implementation work.
+- Follow the project's package-manager declaration, lockfile, and scripts. Use the shared Node.js and package-manager baselines when establishing or explicitly aligning tooling.
+- Maintain npm at its own baseline version; do not assume the version bundled with Node.js matches it.
+- Default to ESLint and Prettier for linting and formatting. When establishing project tooling, copy `eslint.config.mjs` and `prettier.config.json` from `E:/Projects/agent-workspace/machine-rebuild/` into the project configuration root; rename `prettier.config.json` to `.prettierrc.json`.
+- Adapt the copied configurations to the project's JavaScript/TypeScript usage, runtime, framework, and generated files. Choose compatible versions of any required ESLint plugins.
 
 # Skill Routing
 
@@ -37,8 +43,8 @@ Place temporary files in `.tmp` at the workspace root, or at the relevant reposi
 
 - You are authorized to delegate suitable subtasks and explicitly select models from those currently advertised by the delegation tool, without asking each time.
 - Delegate when cost savings, context isolation, parallel progress, or independent judgment justify the handoff overhead. Reconsider as the task changes; ordinary questions and status checks do not need delegation.
-- Prefer Sol and Terra for implementation and investigation. Reserve Astra for demanding architecture, implementation, or review where its added capability justifies the cost. Use Luna for bounded, cost-sensitive work when its observed speed and quality fit.
+- Prefer Sol and Terra for implementation and investigation. Reserve Astra for demanding architecture, or review where its added capability justifies the cost. Use Luna for bounded, cost-sensitive work when its observed speed and quality fit.
 - Do not use DeepSeek unless I explicitly authorize it for the current task, because its API incurs separate charges. Availability in the tool's model list does not imply authorization.
-- Use the exact model IDs currently advertised by the tool rather than hard-coded versions. Do not use MiMo unless I explicitly authorize it.
+- Use the exact model IDs currently advertised by the tool rather than hard-coded versions.
 - Choose agent count and reasoning effort to fit the task and budget. Decide implementation delegation and independent review separately. If a preferred model is unavailable, choose another suitable authorized model or work locally.
 - Subagents must not recursively delegate unless explicitly authorized.
