@@ -25,6 +25,8 @@ Place temporary files in `.tmp` at the workspace root, or at the relevant reposi
 - If `uv` is unavailable on PATH, use `C:/Users/jnkyl/.local/bin/uv.exe`.
 - Retain existing Conda environments for projects that use them; use uv for new Python projects. When invoking Conda environments, use `conda run --no-capture-output -n <env> ...` rather than relying on `conda activate`.
 - Default to Ruff for linting, import sorting, and formatting. When establishing project tooling, copy `E:/Projects/agent-workspace/machine-rebuild/ruff.toml` into the project configuration root and adapt it to the project's Python version and generated files.
+- Default to Pyright for Python type checking. When establishing project tooling, copy the shared Pyright configuration into pyproject.toml and adapt it to the project's Python version and source layout.
+- Do not use Any, unjustified casts, or diagnostic suppressions merely to silence type errors.
 
 ## JavaScript and TypeScript
 
