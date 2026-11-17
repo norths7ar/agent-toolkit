@@ -58,6 +58,38 @@ DSH 使用 `SetNamedSecurityInfoW`，一次提交 `DACL_SECURITY_INFORMATION | L
 
 后续改进应提供独立诊断和可选择的修复项，并分别报告缺失权限、传播失败和应用包 ACE 的疑似影响。
 
+## 4. 模型发现优先返回内置目录，无法主动获取最新型号
+
+**状态：rc.3 的 pi-ai 发现逻辑已确认；旧版缺少 Gemini 4 Argon 是实际使用案例。**
+
+`llm-pi-ai` 的 `discoverModels` 在内置目录认识提供商时直接返回随包发布的模型数据，只有内置目录没有对应提供商时才查询配置端点。用户点击获取模型，并不一定发起远端查询。因此，新型号是否可被发现、已下线型号是否还会出现，取决于内置目录的更新进度，刷新界面不能解决这类滞后。
+
+本机曾在较早的 0.2.1 RC 中无法发现 Zen 的 Gemini 4 Argon，后来重新获取才出现。2026-11-16 核查时，rc.3 目录仍包含小米已于 10 月 21 日下线的 `mimo-v2.5`、`mimo-v2.5-pro`，以及 OpenAI 已关闭的部分旧型号。修正候选目录不应自动改变用户已选模型。
+
+改进方向是提供显式的实时目录查询，将新增型号和参数差异交给用户确认后写入现有配置。模型目录接口未提供的参数应保留已有值或由用户补充；本次未返回的型号不能直接视为下线。查询只访问模型目录，不通过聊天或其他推理请求探测能力。
+
+插件可以复用 DSH 的设置写入和热更新机制实现这一流程。但新型号的接入仍受现有配置结构约束：协议与地址位于提供商级，Zen 等混合协议路由不能为了新增一个模型而整体切换协议。
+
+依据：rc.3 `dsh-llm-pi-ai/lib/index.js` 的 `discoverModels`、`resolveRouteModels`，以及[小米下线公告](https://mimo.mi.com/docs/en-US/updates/deprecate)、[OpenAI 下线时间表](https://developers.openai.com/api/docs/deprecations)。
+
+## 5. 用户模型配置无法指定逐模型协议与地址
+
+**状态：rc.3 的配置缺口已确认；本机已补充缺失型号的内置记录。**
+
+DSH 能在同一个 `opencode` 提供商下调用采用不同协议的 Claude、GPT 和 Gemini，但这些模型的协议与地址来自安装包内的 pi-ai 模型表。用户配置中的模型条目只开放名称、上下文、输出上限、输入类型、推理档位和兼容选项，没有模型级 `api`、`baseURL`。
+
+这使实时发现与实际接入脱节：Zen 端点已返回 Claude Fable 5.2、Gemini 4 Carbon、Gemini 4 Hydrogen 等新型号的协议、地址和参数，但 rc.3 内置表没有这些型号。即使把它们加入用户模型列表，DSH 仍无法取得其协议；在模型条目中手写 `api` 也不会被解析使用。
+
+`resolveRouteModels` 按“提供商统一设置 → 内置模型记录 → 目录共同协议或提供商默认地址”解析调用信息，不读取模型条目的协议和地址。为整个 `opencode` 设置统一协议会改变其他模型的调用方式，无法用来补齐混合协议提供商的新型号。
+
+上游可在模型配置中开放协议与地址，并将模型级设置接入现有解析和分发逻辑。运行时已具备多协议分发能力，缺口在配置层。
+
+本机已在安装包的内置模型表中补充 `muse-ember-1.0`、`claude-fable-5-2`、`gemini-4-carbon`、`gemini-4-hydrogen`，保留原有模型记录和 `opencode` 提供商。隔离配置验证确认，四个型号均能被 DSH 解析，模型目录插件也不再因缺少协议而禁用它们；验证未调用推理接口。安装包更新可能覆盖这次补充，届时需检查上游是否已纳入这些记录。
+
+模型目录插件仍负责查询、参数更新和配置增删，不通过新增影子提供商或接管适配器绕过此限制。
+
+依据：rc.3 `dsh-llm-pi-ai/lib/index.js` 的 `modelFields`、`resolveRouteModels`、`reuseCatalogProvider`，以及 pi-ai 的 `dist/providers/data/opencode.json` 和 `dist/providers/opencode.js`。
+
 ## 相关实现限制
 
 ### shell 与直接文件工具使用不同沙箱
