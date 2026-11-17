@@ -1,10 +1,14 @@
 # DeepSeek Harness 已知软件问题
 
-记录 DSH 的已知故障、原因和修复方向，供维护与上游反馈使用。最后核实：2026-11-17。
+记录 DSH 的已知故障、使用限制和调查依据，供后续维护与上游反馈使用。最后核实：2026-11-17。
 
 调查环境为 Windows 11 Pro，安装包内 `@deepseek-ai/dsh-sandbox-local`、`@deepseek-ai/dsh-sandbox-windows-acl` 版本均为 `0.2.2-rc.3`。
 
-## 1. 工作区缺少 WRITE_OWNER 时，shell 沙箱初始化失败
+目前暂停 DSH 的进一步调整。下文的修复与扩展方案用于记录调查结论，尚未实施的部分保留其验证状态。
+
+## Windows 沙箱与审批
+
+### 工作区缺少 WRITE_OWNER 时，shell 沙箱初始化失败
 
 **状态：已确认。**
 
@@ -12,13 +16,15 @@
 
 修改 DACL 需要 `WRITE_DAC`，设置完整性标签还需要 `WRITE_OWNER`。目录所有者隐含的修改 DACL 权限不包含 `WRITE_OWNER`，所以即使用户拥有目录、可以正常读写文件，也可能无法完成这一步初始化。
 
-本机修复报告确认：工作区根目录原先 `WRITE_DAC=true`、`WRITE_OWNER=false`，为当前用户补上 FullControl 后两项均为 true。FullControl 能解决根目录初始化，但包含了超出此处缺失项的权限；仅补 `WRITE_OWNER` 是更小的权限调整。
+本机修复报告确认：工作区根目录原先 `WRITE_DAC=true`、`WRITE_OWNER=false`，为当前用户补上 FullControl 后两项均为 true。此次 FullControl 授权解决了根目录初始化，但范围大于缺失的 `WRITE_OWNER`，也未解决已有子目录的授权问题。
 
-## 2. 授权未传播到已有子目录，DSH 仍判定成功
+这套沙箱会修改工作区的 DACL 和低完整性标签。工作区授权会被保留供后续调用复用，不随单次命令结束而撤销；会话临时目录的授权另有回收流程。
+
+### 授权未传播到已有子目录，DSH 仍判定成功
 
 **状态：已通过独立目录对照实验复现；实际项目尚未完成整树修复。**
 
-### 现象与原因
+#### 现象与原因
 
 在 OpenCodex 审查任务中，多个使用 `workspace-write` 的子代理无法通过 shell 写入 `opencodex/.tmp`。其中一个子代理也无法写入工作区 `.tmp`，但能在工作区根目录新建目录并写入。
 
@@ -26,7 +32,7 @@
 
 DSH 使用 `SetNamedSecurityInfoW`，一次提交 `DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION`（`0x14`）。在本机复现中，现有子目录缺少 `WRITE_OWNER` 时，这次组合更新没有传播到该子目录，连同 DACL 更新一起未生效；API 却仍返回根目录操作成功。
 
-### 对照实验
+#### 对照实验
 
 独立实验先创建子目录，再给根目录补权限，最后使用与 DSH 相同的 Windows API、标志和等效授权条目，复现授权传播过程。
 
@@ -38,15 +44,15 @@ DSH 使用 `SetNamedSecurityInfoW`，一次提交 `DACL_SECURITY_INFORMATION | L
 
 各组在根目录更新后新建的子目录，都继承了根目录已设置的对应权限和标签。实验说明，已有子目录缺少 `WRITE_OWNER` 足以造成“新目录能写、旧目录不能写”的现象。
 
-### DSH 未发现失败，后续还会跳过重试
+#### 根目录检查漏掉了传播失败
 
 `grantWrite` 只检查根目录是否已有预期的 capability allow ACE、Everyone deny ACE 和低完整性标签；满足后直接返回。设置 API 返回成功后，也没有核实子项是否真正获得权限。
 
 因此，首次授权会漏报子目录传播失败；后续即使补好了子目录的权限，也可能因根目录检查通过而跳过重新授权。
 
-修复需要补足相关现有子项的 `WRITE_OWNER`，重新下发授权，并验证子项的 DACL 和低完整性标签。DSH 也需要在授权后检查传播结果，并支持修复根目录授权已存在、子目录授权缺失的状态。仅将 DACL 与标签分开设置只能解决 DACL 的传播，低完整性进程写入所需的标签仍需另行设置成功。
+实验支持的修复路径是补足相关现有子项的 `WRITE_OWNER`，重新下发授权，并验证子项的 DACL 和低完整性标签；完整项目树尚未按此修复。DSH 的实现还需检查传播结果，并能补齐根目录已有授权、子目录缺失授权的状态。仅将 DACL 与标签分开设置只能解决 DACL 的传播，低完整性进程写入所需的标签仍需成功设置。
 
-## 3. ACL 修复脚本缺少独立诊断和分项修复
+### ACL 修复脚本缺少独立诊断和分项修复
 
 **状态：脚本行为与本次执行结果已确认；应用包权限冲突的底层原因未确认。**
 
@@ -58,7 +64,37 @@ DSH 使用 `SetNamedSecurityInfoW`，一次提交 `DACL_SECURITY_INFORMATION | L
 
 后续改进应提供独立诊断和可选择的修复项，并分别报告缺失权限、传播失败和应用包 ACE 的疑似影响。
 
-## 4. 模型发现优先返回内置目录，无法主动获取最新型号
+### 支持单次越权，但没有可复用的有限授权
+
+**状态：审批服务、PowerShell 执行路径和审批界面已核实。**
+
+DSH 支持在普通沙箱模式下，为一条命令申请 `sandbox_permissions: "danger-full-access"`，并通过 `justification` 说明理由。审批返回 `allowed-once` 后，执行器只对当前调用使用沙箱外执行路径，不改变会话原有的沙箱模式。这条路径跳过沙箱初始化，因此可以直接执行原任务，无需先修工作区 ACL。
+
+但沙箱越权审批没有“允许同类命令”“本轮允许”或“本会话允许”等授权范围，也没有命令前缀授权规则。通用审批卡片具备可选的“始终允许”按钮，沙箱审批面板却只接入了允许一次和拒绝；不能仅凭界面组件中的文案判断功能可用。
+
+审批策略只有 `ask` 和 `never`。`never` 会直接拒绝需要审批的操作，并非自动允许。若沙箱持续不可用，长程任务就可能反复要求单次批准；单次越权适合偶发受阻，无法消除持续的审批打断。
+
+### Auto 将自动审查与关闭沙箱绑定
+
+**状态：权限预设和执行前审查逻辑已核实。**
+
+内置 Auto 预设固定使用 `sandbox: 'danger-full-access'` 和 `approval: 'ask'`。启用后，工具操作由模型在执行前审查，通过后在无 DSH 文件沙箱限制的环境中执行。审查拒绝时，按审批策略转交用户或直接阻止；审查失败也会阻止执行。
+
+因此，Auto 与无审查的 Full Access 有实质区别，但它也不是“保留沙箱，只自动批准越权申请”。自动审查判断操作是否获准执行，OS 沙箱限制程序运行后的访问范围；Auto 保留前者，放弃后者。放行后的程序通常使用当前 Windows 用户权限，并不会因此自动获得管理员权限。
+
+Auto 跳过了 Windows 沙箱的 ACL 初始化，但获准执行的命令仍可能修改 ACL。它避免的是沙箱自动下发授权这一流程，而不是从权限上禁止所有 ACL 操作。
+
+现有内置选项缺少“保留沙箱＋自动审查单次越权”的组合。普通沙箱模式需要逐次审批；Auto 则对工具操作进行审查，同时关闭沙箱。这一取舍直接影响长程任务的连续性和执行边界。
+
+### shell 与直接文件工具使用不同沙箱
+
+shell 子进程使用 Windows ACL/低权限 token 路径，直接文件工具另走 `dsh-fs-sandbox`。OpenCodex 审查任务中出现了直接 `write` 工具能创建文件、shell 却不能修改对应位置的情况。
+
+排查时应分别记录具体工具、工作目录和 sandbox policy，并单独验证 shell 的访问结果。
+
+## 模型发现与接入
+
+### 模型发现优先返回内置目录，刷新未必查询远端
 
 **状态：rc.3 的 pi-ai 发现逻辑已确认；旧版缺少 Gemini 4 Argon 是实际使用案例。**
 
@@ -72,7 +108,7 @@ DSH 使用 `SetNamedSecurityInfoW`，一次提交 `DACL_SECURITY_INFORMATION | L
 
 依据：rc.3 `dsh-llm-pi-ai/lib/index.js` 的 `discoverModels`、`resolveRouteModels`，以及[小米下线公告](https://mimo.mi.com/docs/en-US/updates/deprecate)、[OpenAI 下线时间表](https://developers.openai.com/api/docs/deprecations)。
 
-## 5. 用户模型配置无法指定逐模型协议与地址
+### 用户模型配置无法指定逐模型协议与地址
 
 **状态：rc.3 的配置缺口已确认；本机已补充缺失型号的内置记录。**
 
@@ -90,13 +126,15 @@ DSH 能在同一个 `opencode` 提供商下调用采用不同协议的 Claude、
 
 依据：rc.3 `dsh-llm-pi-ai/lib/index.js` 的 `modelFields`、`resolveRouteModels`、`reuseCatalogProvider`，以及 pi-ai 的 `dist/providers/data/opencode.json` 和 `dist/providers/opencode.js`。
 
-## 相关实现限制
+## 扩展接口与未验证方案
 
-### shell 与直接文件工具使用不同沙箱
+### 插件可接管单次审批，但不能直接复用内置 Auto
 
-shell 子进程使用 Windows ACL/低权限 token 路径，直接文件工具另走 `dsh-fs-sandbox`。本次会话中出现了直接 `write` 工具能创建文件、shell 却不能修改对应位置的情况。
+`approval/request` 是插件可参与的审批事件。监听器可以返回 `allowed-once`，也可以调用 `next()` 将请求交给后续处理者，包括人工审批界面。审批服务负责记录请求与结果，所以从接口上可以编写独立插件，在保留会话沙箱模式的同时自动审查单次越权。
 
-排查时应分别记录具体工具、工作目录和 sandbox policy，并单独验证 shell 的访问结果。
+内置 auto-review 的审查函数未作为公共接口导出，并且执行入口绑定 Auto 预设。独立插件需要实现自己的审查逻辑，通过调用 ID 关联真实工具参数和用户授权上下文；审批请求中的理由不足以独立决定是否放行。`never` 策略会在事件分发前拒绝请求，插件不能通过这个接口覆盖该策略。
+
+这条扩展路径尚未实现或运行验证。它能减少人工审批，却不会消除现有 `workspace-write` 沙箱在初始化时修改 ACL 的行为。
 
 ### Windows 后端未接入 MXC
 
@@ -114,5 +152,11 @@ DSH 的 shell executor 通过 `ctx.sandbox` 使用抽象 `SandboxProvider` 服�
 - 同包 `src/grant.ts`、`src/token.ts`、`README.md`：授权生命周期、token 与已知 ACL 行为。
 - `dsh/node_modules/@deepseek-ai/dsh-sandbox-local/src/index.ts`：Windows 后端选择及 runner 接口。
 - `dsh/node_modules/@deepseek-ai/dsh-sandbox/src/index.ts`：`SandboxProvider` 抽象接口。
+- 同包 `src/escalation.ts`：单次越权参数、审批顺序及 `allowed-once` 处理。
+- `dsh/node_modules/@deepseek-ai/dsh-tool-pwsh/src/index.ts` 与 `dsh-pwsh-sandbox/src/index.ts`：当前调用的权限覆盖与沙箱外执行路径。
+- `dsh/node_modules/@deepseek-ai/dsh-user-approval/src/index.ts`、`src/types.ts`：审批策略、插件事件与审计记录。
+- `dsh/node_modules/@deepseek-ai/dsh-client-ui-approval/src/client/ApprovalPanel.tsx`、`ApprovalCard.tsx`：沙箱审批按钮与通用卡片的区别。
+- `dsh/node_modules/@deepseek-ai/dsh-permission-presets/src/index.ts`：Auto 的固定沙箱与审批策略组合。
+- `dsh/node_modules/@deepseek-ai/dsh-experimental-auto-review/src/index.ts`：模型审查入口、拒绝与失败处理。
 
 工作区修复报告与备份：`E:/Projects/agent-workspace-acl-recovery-20261116/`。
