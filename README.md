@@ -23,10 +23,15 @@ pwsh -File ./Backup-AgentConfig.ps1
 `-Check` 只显示差异。支持 `-SkillsRoot`、`-CodexRoot`、`-DshRoot` 指定源目录；Codex 默认目录优先取 `CODEX_HOME`，否则使用 `~/.codex/`；DSH 默认目录优先取 `DSH_HOME`，否则使用 `~/.dsh/`。
 
 - 收集 Codex 全局 `AGENTS.md`、`model-prompts/` 下的 Markdown 和 `bindings.json`，以及 Codex 根目录下名含 `instructions` 的 Markdown 文件。同名正文优先收集 `model-prompts/` 中的版本；不收集生成的模型目录与状态记录。
-- 将 DSH 全局 `AGENTS.md` 收集到 `deepseek-harness/instructions/AGENTS.md`；源文件不存在时跳过，保留已有备份。不收集 DSH 凭据、聊天记录、运行状态、插件依赖或其他配置。
+- 将 DSH 全局 `AGENTS.md` 收集到 `deepseek-harness/instructions/AGENTS.md`；源文件不存在时跳过，保留已有备份。这个脚本不收集 DSH 的其他配置。
+
 - 自动发现 Skills 源目录中含 `SKILL.md` 的各个子目录，复制其中的规则和配套资源。新增 Skill 无需维护名单。
 - 延续原有过滤：跳过 Git、依赖和缓存目录、错误收集箱、`local` / `local-config.md`、`.env*` 与私钥文件。
 - 仅更新有差异的文件，不自动删除仓库中已有的文件。项目模板、override 配置示例和 MCP 源码直接在仓库维护。
+
+### DSH 模型提示词备份
+
+在 DSH Desktop 的「提示词」界面编辑并保存后，从仓库根目录运行 `pwsh -File ./Backup-DshModelGuidance.ps1`。脚本用 uv 提供的隔离环境解析 Desktop 配置，只把提示词名称、正文和模型绑定导出到 `deepseek-harness/instructions/model-guidance.json`。加 `-Check` 可以预览是否需要更新；没有已保存的提示词配置时保留旧备份。脚本不修改本机配置，仓库副本也不参与 DSH 运行时加载。
 
 ## 换机取用
 
