@@ -1,4 +1,0 @@
-- insert:
-    - id: local-model-catalog
-      name: dsh-model-catalog
-      config: {}

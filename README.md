@@ -75,7 +75,9 @@ pwsh -File ./codex/scripts/Prepare-ModelCatalog.ps1
 
 插件界面开发遵循共享的[前端设计约定](deepseek-harness/docs/frontend-design.md)，沿用 DSH 的组件与交互语言。
 
-[模型目录原型](deepseek-harness/plugins/dsh-model-catalog/README.md)直接查询提供商的模型目录，预览参数差异，再按选择写回现有配置。已有手动参数默认保留；目录未提供的参数可以补录。
+[模型更新](deepseek-harness/plugins/dsh-model-updater/README.md)直接查询提供商的模型目录，预览参数差异，再按选择写回现有配置。已有手动参数默认保留；目录未提供的参数可以补录。
+
+模型更新独立维护于 `norths7ar/dsh-model-updater`，此处目录是 submodule。开发与本机 DSH 安装引用指向 `../deepseek-harness/dsh-model-updater`，此处 checkout 记录选定提交。已验证 DSH 从 GitHub 链接安装并启用 0.1.0；安装、支持范围和协议局限见插件文档。
 
 开发中的[第二意见插件](deepseek-harness/plugins/dsh-second-opinion/README.md)支持在回复处邀请其他模型，以可折叠的 Markdown 卡片预览，点击“继续聊”才创建正式分支，并提供默认提示词设置。已适配 DSH 0.2.2-rc.3，要求原会话已有运行实例，不主动恢复冷会话。已通过离线运行库验证，实际窗口与模型菜单加载正常，真实 Provider 生成流程待实际使用验证。
 
