@@ -47,7 +47,7 @@ git submodule update --init --recursive
 
 ### 收集指令和 Skills
 
-[Backup-AgentConfig.ps1](Backup-AgentConfig.ps1) 将 Codex、DSH 的指令和 Skills 备份到本仓库。
+[Backup-AgentConfig.ps1](Backup-AgentConfig.ps1) 将 Codex、DSH 的全局 AGENTS.md 和 Skills 备份到本仓库。模型提示词和 bindings 直接在仓库维护，不参与反向收集。
 
 ```powershell
 pwsh -File ./Backup-AgentConfig.ps1 -Check
@@ -69,14 +69,29 @@ pwsh -File ./Backup-DshModelGuidance.ps1
 
 ### 生成 Codex 模型目录
 
-[Prepare-ModelCatalog.ps1](codex/scripts/Prepare-ModelCatalog.ps1) 根据 Codex 模型缓存和自定义提示词生成 `model-catalog.json`。
+[Prepare-ModelCatalog.ps1](codex/scripts/Prepare-ModelCatalog.ps1) 根据已下载的官方目录（没有时使用 Codex 模型缓存）和仓库提示词生成 `model-catalog.json`。
 
 ```powershell
 pwsh -File ./codex/scripts/Prepare-ModelCatalog.ps1 -Check
 pwsh -File ./codex/scripts/Prepare-ModelCatalog.ps1
 ```
 
-在 Codex 配置目录的 `model-prompts/` 中编辑提示词 Markdown 和 `bindings.json`，再运行脚本生成目录。可通过 `-CodexRoot` 指定 Codex 配置目录，或通过 `-SourceCatalog` 指定来源 JSON。
+在本仓库 `codex/instructions/base-instructions/` 中编辑提示词 Markdown 和 `bindings.json`，再运行脚本生成目录。可通过 `-CodexRoot` 指定 Codex 配置目录，或通过 `-SourceCatalog` 指定来源 JSON。
+
+### 手动刷新官方模型目录
+
+[Update-ModelCatalog.ps1](codex/scripts/Update-ModelCatalog.ps1) 使用本机 Codex 的 ChatGPT 登录凭据获取官方目录，再调用上述生成脚本。Service Desk V2 的“Codex 模型目录”维护任务调用同一入口；也可以直接执行：
+
+```powershell
+pwsh -NoProfile -File ./codex/scripts/Update-ModelCatalog.ps1
+pwsh -NoProfile -File ./codex/scripts/Update-ModelCatalog.ps1 -Check
+```
+
+刷新直接读取仓库中的 Markdown 与 `bindings.json`，不在 `.codex` 保存它们的副本，按完整模型 ID 应用绑定；新增未绑定模型使用官方提示词，官方移除模型后其仓库绑定仍保留。日志列出新增、移除和更新的模型。`-Check` 获取并预览结果，不写入 Codex 配置目录。
+
+脚本从 `CODEX_CLI_PATH`、Codex 配置中记录的 CLI 路径或 PATH 查找客户端，也可用 `-CodexExecutable` 指定。凭据过期时会提示在 Codex 重新登录，不自行续期或修改凭据。官方原始目录保存为 `official-model-catalog.json`，不覆盖客户端维护的 `models_cache.json`；生成结果写入 `model-catalog.json`，目录变化后需重启 Codex。已有自定义目录应通过 `model_catalog_json` 启用，脚本不修改 `config.toml`。
+
+生成记录保存在仓库 `codex/.local/model-catalog.state.json`，由 `.gitignore` 排除。刷新按 Codex 目录互斥，先生成并校验再替换文件，失败时保留原目录；若生成结果被手动改过，先处理生成脚本报告的冲突。每次运行的源目录、生成结果与旧文件备份保留在本仓库 `.tmp/YYYYMMDD-refresh-model-catalog-*`，不包含登录凭据。操作为手动触发，不注册计划任务或后台服务。
 
 ## MCP 原型（已全部停用）
 

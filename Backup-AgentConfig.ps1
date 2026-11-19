@@ -31,30 +31,7 @@ if (Test-Path -LiteralPath $dshInstructions -PathType Leaf) {
         Target = Join-Path $repoRoot 'deepseek-harness/instructions/AGENTS.md'
     }
 }
-# Prefer editable model-prompts sources over legacy root-level copies of the same name.
-$promptRoot = Join-Path $CodexRoot 'model-prompts'
-$promptFiles = @()
-if (Test-Path -LiteralPath $promptRoot -PathType Container) {
-    $promptFiles = @(Get-ChildItem -LiteralPath $promptRoot -File -Filter '*.md')
-    $bindingsPath = Join-Path $promptRoot 'bindings.json'
-    if (Test-Path -LiteralPath $bindingsPath -PathType Leaf) {
-        $files += [pscustomobject]@{
-            Source = $bindingsPath
-            Target = Join-Path $repoRoot 'codex/instructions/base-instructions/bindings.json'
-        }
-    }
-}
-$promptNames = @($promptFiles | ForEach-Object Name)
-foreach ($instruction in Get-ChildItem -LiteralPath $CodexRoot -File -Filter '*instructions*.md') {
-    if ($instruction.Name -in $promptNames) { continue }
-    $promptFiles += $instruction
-}
-foreach ($instruction in $promptFiles) {
-    $files += [pscustomobject]@{
-        Source = $instruction.FullName
-        Target = Join-Path $repoRoot "codex/instructions/base-instructions/$($instruction.Name)"
-    }
-}
+# Per-model prompts and bindings are maintained directly in this repository.
 $skills = @(Get-ChildItem -LiteralPath $SkillsRoot -Directory -Force | Where-Object {
     Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf
 })
