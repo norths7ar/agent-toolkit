@@ -1,5 +1,0 @@
-- insert:
-    - id: local-claude-replay-guard
-      name: dsh-claude-replay-guard
-      disabled: true
-      config: {}
