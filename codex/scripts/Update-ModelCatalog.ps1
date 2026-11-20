@@ -1,17 +1,48 @@
-#requires -Version 7.0
+﻿#requires -Version 7.0
 [CmdletBinding()]
 param(
     [string]$CodexRoot = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }),
     [string]$CodexExecutable,
-    [switch]$Check
+    [switch]$Check,
+    [switch]$Json
 )
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Text.UTF8Encoding]::new($false)
+if (Get-Variable -Name PSStyle -ErrorAction SilentlyContinue) {
+    $PSStyle.OutputRendering = 'PlainText'
+}
+
 $CodexRoot = [IO.Path]::GetFullPath($CodexRoot)
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $promptRoot = Join-Path $repoRoot 'codex/instructions/base-instructions'
 $mutex = $null
 $ownsMutex = $false
+$logs = [Collections.Generic.List[string]]::new()
+$jsonEmitted = $false
+$failureDetails = @()
+
+function Add-Log([string]$Text) {
+    if ([string]::IsNullOrEmpty($Text)) { return }
+    foreach ($line in ($Text -split "\r?\n")) {
+        if ($line -eq '') { continue }
+        $logs.Add($line)
+        if (-not $Json) { Write-Output $line }
+    }
+}
+
+function Emit-JsonResult([string]$State, [string]$Summary, [string[]]$Details = @()) {
+    if (-not $Json) { return }
+    $script:jsonEmitted = $true
+    $payload = [ordered]@{
+        state = $State
+        summary = $Summary
+        details = @($Details | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        logs = @($logs)
+    }
+    Write-Output ($payload | ConvertTo-Json -Depth 10 -Compress)
+}
 
 function Get-FileDigest([string]$Path) {
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
@@ -109,7 +140,7 @@ try {
     $versionMatch = [regex]::Match(($versionOutput -join "`n"), 'codex-cli\s+(\d+\.\d+\.\d+)')
     if (-not $versionMatch.Success) { throw 'Codex did not report a recognizable CLI version.' }
     $version = $versionMatch.Groups[1].Value
-    Write-Output "Fetching official model catalog (Codex $version)..."
+    Add-Log "Fetching official model catalog (Codex $version)..."
     try { $auth = Get-Content -LiteralPath (Join-Path $CodexRoot 'auth.json') -Raw -Encoding utf8 | ConvertFrom-Json }
     catch { throw 'Cannot read Codex login credentials. Sign in to the Codex app, then retry.' }
     if (-not $auth.tokens.access_token -or -not $auth.tokens.account_id) {
@@ -134,21 +165,77 @@ try {
     $officialPath = Join-Path $stage 'official-model-catalog.json'
     [IO.File]::WriteAllText($officialPath, ([ordered]@{ models = $upstream.models } | ConvertTo-Json -Depth 100) + "`n", [Text.UTF8Encoding]::new($false))
 
-    & (Join-Path $PSScriptRoot 'Prepare-ModelCatalog.ps1') -CodexRoot $stagedHome -SourceCatalog $officialPath -StatePath (Join-Path $stagedHome 'model-catalog.state.json')
-    $generatedPath = Join-Path $stagedHome 'model-catalog.json'
-    $generated = Get-Content -LiteralPath $generatedPath -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable
     $oldModels = @{}
     $previousPath = Join-Path $backupRoot 'model-catalog.json'
-    if (Test-Path -LiteralPath $previousPath) {
-        foreach ($model in (Get-Content -LiteralPath $previousPath -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable).models) { $oldModels[$model.slug] = $model }
+    if (-not (Test-Path -LiteralPath $previousPath)) {
+        $previousPath = Join-Path $backupRoot 'official-model-catalog.json'
     }
+    if (Test-Path -LiteralPath $previousPath) {
+        foreach ($model in (Get-Content -LiteralPath $previousPath -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable).models) {
+            $oldModels[$model.slug] = $model
+        }
+    }
+
+    $unboundVisible = @($upstream.models | Where-Object { -not $bindings.Contains($_.slug) -and $_.visibility -ne 'hide' } | ForEach-Object { $_.slug } | Sort-Object)
+    $hiddenKept = @($upstream.models | Where-Object { -not $bindings.Contains($_.slug) -and $_.visibility -eq 'hide' } | ForEach-Object { $_.slug } | Sort-Object)
+    $upstreamIds = @($upstream.models | ForEach-Object { $_.slug })
+    $addedFromPrev = @($upstreamIds | Where-Object { -not $oldModels.ContainsKey($_) } | Sort-Object)
+    $removedFromPrev = @($oldModels.Keys | Where-Object { $_ -notin $upstreamIds } | Sort-Object)
+
+    if ($unboundVisible.Count -gt 0) {
+        if ($addedFromPrev.Count) { Add-Log ("Added: " + ($addedFromPrev -join ', ')) }
+        if ($removedFromPrev.Count) { Add-Log ("Removed from official catalog: " + ($removedFromPrev -join ', ')) }
+        if ($hiddenKept.Count) { Add-Log ("Hidden official models kept as-is: " + ($hiddenKept -join ', ')) }
+        Add-Log ("Unbound visible models (action required): " + ($unboundVisible -join ', '))
+        Add-Log "Fetched official snapshot: $officialPath"
+
+        $details = [Collections.Generic.List[string]]::new()
+        $details.Add("未绑定可见模型（需先处理 bindings.json）：$($unboundVisible -join ', ')")
+        if ($addedFromPrev.Count) { $details.Add("新增官方模型：$($addedFromPrev -join ', ')") }
+        if ($removedFromPrev.Count) { $details.Add("官方已移除模型：$($removedFromPrev -join ', ')") }
+        if ($hiddenKept.Count) { $details.Add("隐藏模型原样保留：$($hiddenKept -join ', ')") }
+        $details.Add("已保存官方目录快照：$officialPath")
+
+        if ($Check) {
+            $summary = "发现未绑定的可见模型：$($unboundVisible -join ', ')；请先编辑 bindings.json 后再刷新目录。"
+            Add-Log $summary
+            Add-Log 'Preview only; no Codex files changed.'
+            Emit-JsonResult -State 'warning' -Summary $summary -Details $details
+            return
+        }
+        $failureDetails = @($details)
+        throw "已拦截刷新：存在未绑定的可见模型（$($unboundVisible -join ', ')），请先编辑 codex/instructions/base-instructions/bindings.json 后再试。"
+    }
+
+    $prepArgs = @{
+        CodexRoot = $stagedHome
+        SourceCatalog = $officialPath
+        StatePath = (Join-Path $stagedHome 'model-catalog.state.json')
+    }
+    $prepOutput = & (Join-Path $PSScriptRoot 'Prepare-ModelCatalog.ps1') @prepArgs 3>&1
+    foreach ($entry in $prepOutput) { Add-Log ($entry.ToString()) }
+
+    $generatedPath = Join-Path $stagedHome 'model-catalog.json'
+    $generated = Get-Content -LiteralPath $generatedPath -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable
+    $added = [Collections.Generic.List[string]]::new()
+    $updated = [Collections.Generic.List[string]]::new()
+    $removed = [Collections.Generic.List[string]]::new()
     $newIds = @($generated.models | ForEach-Object { $_.slug })
     foreach ($model in $generated.models) {
-        if (-not $oldModels.ContainsKey($model.slug)) { Write-Output "Added: $($model.slug)" }
-        elseif (($oldModels[$model.slug] | ConvertTo-Json -Depth 100 -Compress) -cne ($model | ConvertTo-Json -Depth 100 -Compress)) { Write-Output "Updated: $($model.slug)" }
+        if (-not $oldModels.ContainsKey($model.slug)) {
+            $added.Add($model.slug)
+            Add-Log "Added: $($model.slug)"
+        }
+        elseif (($oldModels[$model.slug] | ConvertTo-Json -Depth 100 -Compress) -cne ($model | ConvertTo-Json -Depth 100 -Compress)) {
+            $updated.Add($model.slug)
+            Add-Log "Updated: $($model.slug)"
+        }
     }
-    foreach ($slug in $oldModels.Keys | Sort-Object) {
-        if ($slug -notin $newIds) { Write-Output "Removed from official catalog: $slug (any repository binding is retained)." }
+    foreach ($slug in ($oldModels.Keys | Sort-Object)) {
+        if ($slug -notin $newIds) {
+            $removed.Add($slug)
+            Add-Log "Removed from official catalog: $slug (any repository binding is retained)."
+        }
     }
     foreach ($relative in $paths) {
         if ((Get-FileDigest $locations[$relative]) -ne $digests[$relative]) { throw "Local input changed during refresh: $relative. Retry after editing finishes." }
@@ -156,9 +243,36 @@ try {
     foreach ($name in $sourceDigests.Keys) {
         if ((Get-FileDigest (Join-Path $promptRoot $name)) -ne $sourceDigests[$name]) { throw "Repository input changed during refresh: $name. Retry after editing finishes." }
     }
+
     $changed = (Get-FileDigest $generatedPath) -ne $digests['model-catalog.json']
-    Write-Output "Result: $($generated.models.Count) models; catalog changed=$changed. Repository prompts and bindings applied without modification."
-    if ($Check) { Write-Output 'Preview only; no Codex files changed.'; return }
+    $boundCount = @($generated.models | Where-Object { $bindings.Contains($_.slug) }).Count
+    Add-Log "Result: $($generated.models.Count) models ($boundCount bound, $($hiddenKept.Count) hidden kept as-is); catalog changed=$changed."
+
+    $changeParts = [Collections.Generic.List[string]]::new()
+    if ($added.Count) { $changeParts.Add("新增 $($added.Count) 个") }
+    if ($updated.Count) { $changeParts.Add("更新 $($updated.Count) 个") }
+    if ($removed.Count) { $changeParts.Add("移除 $($removed.Count) 个") }
+    if ($changed -and -not $changeParts.Count) { $changeParts.Add('目录内容有变更') }
+
+    $details = [Collections.Generic.List[string]]::new()
+    if ($added.Count) { $details.Add("新增模型：$($added -join ', ')") }
+    if ($updated.Count) { $details.Add("更新模型：$($updated -join ', ')") }
+    if ($removed.Count) { $details.Add("官方已移除：$($removed -join ', ')") }
+    if ($hiddenKept.Count) { $details.Add("隐藏模型原样保留：$($hiddenKept -join ', ')") }
+
+    if ($Check) {
+        if ($changed) {
+            $state = 'warning'
+            $summary = "检测到目录变更（$($changeParts -join '、')），当前仅检查未写入；确认后点击「刷新模型目录」生效。"
+        }
+        else {
+            $state = 'success'
+            $summary = "已是最新（$($generated.models.Count) 个模型，$boundCount 个已绑定，$($hiddenKept.Count) 个隐藏模型原样保留）。"
+        }
+        Add-Log 'Preview only; no Codex files changed.'
+        Emit-JsonResult -State $state -Summary $summary -Details $details
+        return
+    }
 
     $publications = [ordered]@{
         'official-model-catalog.json' = $officialPath
@@ -191,12 +305,28 @@ try {
         }
         throw "Publishing failed: $publishError. Prior files restored. Backups: $backupRoot"
     }
-    Write-Output "Backup and fetched source: $stage"
-    if ($changed) { Write-Output 'Updated. Restart Codex to load the refreshed catalog.' }
-    else { Write-Output 'Already up to date; no restart needed for this refresh.' }
+
+    Add-Log "Backup and fetched source: $stage"
+    $summary = if ($changed) {
+        "模型目录已更新（$($changeParts -join '、')），重启 Codex 后生效。"
+    }
+    else {
+        "模型目录已是最新（$($generated.models.Count) 个模型），无需重启 Codex。"
+    }
+    Add-Log $summary
+    Emit-JsonResult -State 'success' -Summary $summary -Details $details
 }
 catch {
-    [Console]::Error.WriteLine("Model catalog refresh failed: $($_.Exception.Message)")
+    $msg = $_.Exception.Message
+    $logs.Add("Model catalog refresh failed: $msg")
+    if ($Json) {
+        if (-not $jsonEmitted) {
+            Emit-JsonResult -State 'failed' -Summary $msg -Details $failureDetails
+        }
+    }
+    else {
+        [Console]::Error.WriteLine("Model catalog refresh failed: $msg")
+    }
     exit 1
 }
 finally {

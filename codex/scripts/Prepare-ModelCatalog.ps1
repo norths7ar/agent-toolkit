@@ -8,6 +8,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Text.UTF8Encoding]::new($false)
+if (Get-Variable -Name PSStyle -ErrorAction SilentlyContinue) {
+    $PSStyle.OutputRendering = 'PlainText'
+}
 $CodexRoot = [IO.Path]::GetFullPath($CodexRoot)
 $promptRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../instructions/base-instructions'))
 $outputPath = Join-Path $CodexRoot 'model-catalog.json'
@@ -80,10 +85,16 @@ foreach ($filename in ($bindings.Values | Sort-Object -Unique)) {
 $seen = @{}
 $rows = @()
 $hashes = [ordered]@{}
+$unboundVisible = [Collections.Generic.List[string]]::new()
+$hiddenKept = [Collections.Generic.List[string]]::new()
 foreach ($model in $source.models) {
     if (-not $model.slug -or $seen.ContainsKey($model.slug)) { throw "Missing or duplicate model slug: $($model.slug)" }
     $seen[$model.slug] = $true
-    if (-not $bindings.Contains($model.slug)) { continue }
+    if (-not $bindings.Contains($model.slug)) {
+        if ($model.visibility -eq 'hide') { $hiddenKept.Add($model.slug) }
+        else { $unboundVisible.Add($model.slug) }
+        continue
+    }
     if ($model.model_messages -isnot [Collections.IDictionary] -or -not $model.model_messages.Contains('instructions_template')) {
         throw "Model has no supported instructions_template: $($model.slug)"
     }
@@ -104,7 +115,18 @@ $newState = [ordered]@{
     promptHashes = $hashes
 }
 $stateJson = ($newState | ConvertTo-Json -Depth 10) + "`n"
-$rows | Format-Table -AutoSize | Out-Host
+$table = ($rows | Format-Table -AutoSize | Out-String).TrimEnd()
+if ($table) { Write-Output $table }
+if ($hiddenKept.Count) {
+    Write-Output ("Hidden official models kept as-is: " + (($hiddenKept | Sort-Object) -join ', '))
+}
+if ($unboundVisible.Count) {
+    $unboundList = ($unboundVisible | Sort-Object) -join ', '
+    Write-Output "Unbound visible models (action required): $unboundList"
+    if (-not $Check) {
+        throw "Unbound visible models detected: $unboundList. Update codex/instructions/base-instructions/bindings.json before generating model-catalog.json."
+    }
+}
 $unchanged = (Test-Path -LiteralPath $outputPath) -and [IO.File]::ReadAllText($outputPath) -ceq $json
 Write-Output "Catalog: $outputPath ($($source.models.Count) models, $($rows.Count) custom prompts, unchanged=$unchanged)"
 if ($Check) { Write-Output 'Preview only; no files written.'; return }

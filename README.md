@@ -86,9 +86,10 @@ pwsh -File ./codex/scripts/Prepare-ModelCatalog.ps1
 ```powershell
 pwsh -NoProfile -File ./codex/scripts/Update-ModelCatalog.ps1
 pwsh -NoProfile -File ./codex/scripts/Update-ModelCatalog.ps1 -Check
+pwsh -NoProfile -File ./codex/scripts/Update-ModelCatalog.ps1 -Check -Json
 ```
 
-刷新直接读取仓库中的 Markdown 与 `bindings.json`，不在 `.codex` 保存它们的副本，按完整模型 ID 应用绑定；新增未绑定模型使用官方提示词，官方移除模型后其仓库绑定仍保留。日志列出新增、移除和更新的模型。`-Check` 获取并预览结果，不写入 Codex 配置目录。
+刷新直接读取仓库中的 Markdown 与 `bindings.json`，不在 `.codex` 保存它们的副本，按完整模型 ID 应用绑定；官方 `visibility: "hide"` 的内部隐藏模型（如 `codex-auto-review`、`gpt-reserve`）原样保留。一旦出现未在 `bindings.json` 中绑定的可见模型，`-Check` 会告警提示具体模型名且不改动任何 Codex 文件，直接刷新则硬拦截并拒绝写入 `model-catalog.json`。官方移除模型后其仓库绑定仍保留；传入 `-Json` 时输出结构化 JSON 供 Service Desk 展示摘要与详情。日志列出新增、移除和更新的模型。`-Check` 获取并预览结果，不写入 Codex 配置目录。
 
 脚本从 `CODEX_CLI_PATH`、Codex 配置中记录的 CLI 路径或 PATH 查找客户端，也可用 `-CodexExecutable` 指定。凭据过期时会提示在 Codex 重新登录，不自行续期或修改凭据。官方原始目录保存为 `official-model-catalog.json`，不覆盖客户端维护的 `models_cache.json`；生成结果写入 `model-catalog.json`，目录变化后需重启 Codex。已有自定义目录应通过 `model_catalog_json` 启用，脚本不修改 `config.toml`。
 
