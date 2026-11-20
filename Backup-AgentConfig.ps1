@@ -4,7 +4,8 @@ param(
     [switch]$Check,
     [string]$SkillsRoot = (Join-Path $env:USERPROFILE '.agents/skills'),
     [string]$CodexRoot = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }),
-    [string]$DshRoot = $(if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' })
+    [string]$DshRoot = $(if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }),
+    [string]$GeminiRoot = (Join-Path $env:USERPROFILE '.gemini')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,6 +17,14 @@ function Get-SkillFiles([string]$Root) {
         if ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source: $($entry.FullName)" }
         if ($entry.PSIsContainer) { Get-SkillFiles $entry.FullName }
         elseif ($entry.Extension -notin @('.pyc', '.pem', '.key', '.p12', '.pfx')) { $entry }
+    }
+}
+
+function Get-RuleMarkdownFiles([string]$Root) {
+    foreach ($entry in Get-ChildItem -LiteralPath $Root -Force) {
+        if ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source: $($entry.FullName)" }
+        if ($entry.PSIsContainer) { Get-RuleMarkdownFiles $entry.FullName }
+        elseif ($entry.Extension -eq '.md') { $entry }
     }
 }
 
@@ -42,6 +51,54 @@ foreach ($skill in $skills) {
     foreach ($file in Get-SkillFiles $sourceRoot) {
         $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
         $files += [pscustomobject]@{ Source = $file.FullName; Target = Join-Path $repoRoot "skills/$name/$relative" }
+    }
+}
+# Antigravity global customizations (non-secret assets only; runtime config.json, mcp_config.json, brain/ and builtin/ are excluded).
+$geminiLegacyRule = Join-Path $GeminiRoot 'GEMINI.md'
+if (Test-Path -LiteralPath $geminiLegacyRule -PathType Leaf) {
+    $files += [pscustomobject]@{
+        Source = $geminiLegacyRule
+        Target = Join-Path $repoRoot 'antigravity/GEMINI.md'
+    }
+}
+$antigravityConfig = Join-Path $GeminiRoot 'config'
+if (Test-Path -LiteralPath $antigravityConfig -PathType Container) {
+    foreach ($manifest in @('skills.json', 'plugins.json', 'hooks.json')) {
+        $manifestPath = Join-Path $antigravityConfig $manifest
+        if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+            $files += [pscustomobject]@{
+                Source = $manifestPath
+                Target = Join-Path $repoRoot "antigravity/$manifest"
+            }
+        }
+    }
+    $agyRulesRoot = Join-Path $antigravityConfig 'rules'
+    if (Test-Path -LiteralPath $agyRulesRoot -PathType Container) {
+        foreach ($ruleFile in Get-RuleMarkdownFiles $agyRulesRoot) {
+            $relative = [IO.Path]::GetRelativePath($agyRulesRoot, $ruleFile.FullName)
+            $files += [pscustomobject]@{
+                Source = $ruleFile.FullName
+                Target = Join-Path $repoRoot "antigravity/rules/$relative"
+            }
+        }
+    }
+    $agySkillsRoot = Join-Path $antigravityConfig 'skills'
+    if (Test-Path -LiteralPath $agySkillsRoot -PathType Container) {
+        $agySkills = @(Get-ChildItem -LiteralPath $agySkillsRoot -Directory -Force | Where-Object {
+            Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf
+        })
+        foreach ($skill in $agySkills) {
+            if ($skill.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source: $($skill.FullName)" }
+            $name = $skill.Name
+            $sourceRoot = $skill.FullName
+            foreach ($file in Get-SkillFiles $sourceRoot) {
+                $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
+                $files += [pscustomobject]@{
+                    Source = $file.FullName
+                    Target = Join-Path $repoRoot "antigravity/skills/$name/$relative"
+                }
+            }
+        }
     }
 }
 $changes = @(foreach ($file in $files) {

@@ -1,0 +1,11 @@
+{
+  "entries": [
+    {
+      "path": "C:/Users/jnkyl/.agents/skills",
+      "include_only": [
+        "git-safe-workflow",
+        "fidelity-aware-implementation"
+      ]
+    }
+  ]
+}

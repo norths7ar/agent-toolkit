@@ -10,6 +10,7 @@
 | [模型基础指令](codex/instructions/base-instructions/) | Astra、Sol、Terra、Luna 的提示词，供取用和修改 |
 | [项目指令模板](AGENTS.project-template.md) | 作为项目根目录 `AGENTS.md` 的起点 |
 | [Skills](skills/) | 将需要的 Skill 目录复制到 `~/.agents/skills/`，用法见各自的 `SKILL.md` |
+| [Antigravity 配置](antigravity/) | 包含 `skills.json` 共享声明、差异化覆盖 Skills 与全局规则/Hooks/Plugins 清单；换机恢复时先恢复 `~/.agents/skills/`，再将 `antigravity/` 复制到 `~/.gemini/config/`（若含 `GEMINI.md` 则放回 `~/.gemini/`） |
 | [DSH 指令](deepseek-harness/instructions/) | DSH 全局指令和模型提示词，供参考和取用 |
 
 使用经验见[我如何使用 Codex](docs/how-i-use-codex.md)。
@@ -47,14 +48,14 @@ git submodule update --init --recursive
 
 ### 收集指令和 Skills
 
-[Backup-AgentConfig.ps1](Backup-AgentConfig.ps1) 将 Codex、DSH 的全局 AGENTS.md 和 Skills 备份到本仓库。模型提示词和 bindings 直接在仓库维护，不参与反向收集。
+[Backup-AgentConfig.ps1](Backup-AgentConfig.ps1) 将 Codex、DSH 与 Antigravity 的全局配置和 Skills 备份到本仓库（跳过凭据与对话记录）。模型提示词和 bindings 直接在仓库维护，不参与反向收集。
 
 ```powershell
 pwsh -File ./Backup-AgentConfig.ps1 -Check
 pwsh -File ./Backup-AgentConfig.ps1
 ```
 
-可通过 `-CodexRoot`、`-DshRoot`、`-SkillsRoot` 指定来源目录。默认使用 `CODEX_HOME`、`DSH_HOME`，未设置时分别为 `~/.codex/`、`~/.dsh/`；Skills 默认读取 `~/.agents/skills/`。
+可通过 `-CodexRoot`、`-DshRoot`、`-SkillsRoot`、`-GeminiRoot` 指定来源目录。默认使用 `CODEX_HOME`、`DSH_HOME`，未设置时分别为 `~/.codex/`、`~/.dsh/`；Skills 默认读取 `~/.agents/skills/`，Antigravity 默认读取 `~/.gemini/` 下的 `GEMINI.md` 与 `config/`（`skills.json`、`plugins.json`、`hooks.json`、`rules/` 及差异化 `skills/`）。
 
 ### 导出 DSH 提示词
 
