@@ -30,6 +30,7 @@ Place temporary files in `.tmp` at the workspace root, or at the relevant reposi
 
 ## JavaScript and TypeScript
 
+- Prefer TypeScript over JavaScript for new code; do not migrate existing JavaScript to TypeScript by default.
 - Follow the project's package-manager declaration, lockfile, and scripts. Use the shared Node.js and package-manager baselines when establishing or explicitly aligning tooling.
 - Maintain npm at its own baseline version; do not assume the version bundled with Node.js matches it.
 - Default to ESLint and Prettier for linting and formatting. When establishing project tooling, copy `eslint.config.mjs` and `prettier.config.json` from `E:/Projects/agent-workspace/machine-rebuild/` into the project configuration root; rename `prettier.config.json` to `.prettierrc.json`.
@@ -46,7 +47,6 @@ Place temporary files in `.tmp` at the workspace root, or at the relevant reposi
 - You are authorized to delegate suitable subtasks and explicitly select models from those currently advertised by the delegation tool, without asking each time.
 - Delegate when cost savings, context isolation, parallel progress, or independent judgment justify the handoff overhead. Reconsider as the task changes; ordinary questions and status checks do not need delegation.
 - Prefer Sol and Terra for implementation and investigation. Reserve Astra for demanding architecture, or review where its added capability justifies the cost. Use Luna for bounded, cost-sensitive work when its observed speed and quality fit.
-- Do not use DeepSeek unless I explicitly authorize it for the current task, because its API incurs separate charges. Availability in the tool's model list does not imply authorization.
 - Use the exact model IDs currently advertised by the tool rather than hard-coded versions.
 - Choose agent count and reasoning effort to fit the task and budget. Decide implementation delegation and independent review separately. If a preferred model is unavailable, choose another suitable authorized model or work locally.
 - Subagents must not recursively delegate unless explicitly authorized.
