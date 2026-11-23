@@ -84,7 +84,7 @@ Skills 则放特定任务需要的方法。处理 PowerShell 调用、执行 Git
 
 所以我会明确要求它用 `pwsh.exe`，别一边写着新版的命令，一边又跑进 5.1 里执行。
 
-[`powershell-safe-invocation`](../skills/powershell-safe-invocation/SKILL.md) 处理的是实际调用时的细节：不要把 Bash 的语法直接搬进 PowerShell，不要混用不同 shell 的环境变量和转义方式，处理好带空格的路径、引号和原生程序参数。
+[`powershell-safe-invocation`](../codex/skills/powershell-safe-invocation/SKILL.md) 处理的是实际调用时的细节：不要把 Bash 的语法直接搬进 PowerShell，不要混用不同 shell 的环境变量和转义方式，处理好带空格的路径、引号和原生程序参数。
 
 例如，调用程序时应该把可执行文件和参数分开传，而不是先拼出一整个命令字符串，再套几层 shell 去解释。需要判断执行结果时，也要分清原生程序的退出码和 PowerShell cmdlet 的错误处理，不能混着用。
 
@@ -108,7 +108,7 @@ Skills 则放特定任务需要的方法。处理 PowerShell 调用、执行 Git
 
 ### adversarial-fidelity-review：让独立代理检查它到底丢了什么
 
-[`adversarial-fidelity-review`](../skills/adversarial-fidelity-review/SKILL.md) 是在我的 L4D2 AstRedux 项目里形成的。改插件的过程中，我观察到模型有可能不汇报一些隐性的、意料之外的功能丢失、配置改变等问题。所以我单独配置了这个 Skill，要求子代理去对抗父代理，给我汇报。
+[`adversarial-fidelity-review`](../codex/skills/adversarial-fidelity-review/SKILL.md) 是在我的 L4D2 AstRedux 项目里形成的。改插件的过程中，我观察到模型有可能不汇报一些隐性的、意料之外的功能丢失、配置改变等问题。所以我单独配置了这个 Skill，要求子代理去对抗父代理，给我汇报。
 
 它和前一个 Skill 配合：前一个要求实现时保留该保留的东西，这一个要求实现结束后，再由没有参与实现的独立代理检查一遍。
 
@@ -120,7 +120,7 @@ Skills 则放特定任务需要的方法。处理 PowerShell 调用、执行 Git
 
 ### delegation-router：主代理要会分工，也要负责验收
 
-[`delegation-router`](../skills/delegation-router/SKILL.md) 是要求主代理拉起子代理的 Skill。这里我留了一些判断的自由度，让它根据任务决定怎么分工。
+[`delegation-router`](../codex/skills/delegation-router/SKILL.md) 是要求主代理拉起子代理的 Skill。这里我留了一些判断的自由度，让它根据任务决定怎么分工。
 
 委派时要把目标、上下文、相关路径、允许修改的范围和验收要求交代清楚。多个代理同时工作，要分开写入范围，别几个人一起改同一个文件，最后互相覆盖。能并行的并行，有依赖关系的就按顺序来。
 
@@ -130,7 +130,7 @@ Skills 则放特定任务需要的方法。处理 PowerShell 调用、执行 Git
 
 ### writing-fidelity：写文档也别擅自改我的意思
 
-[`writing-fidelity`](../skills/writing-fidelity/SKILL.md) 是另一项相似的 Skill，用于写报告、写文档，以及修改和审阅文字。我要求它减少废话，减少无意义的防御，聚焦问题。
+[`writing-fidelity`](../codex/skills/writing-fidelity/SKILL.md) 是另一项相似的 Skill，用于写报告、写文档，以及修改和审阅文字。我要求它减少废话，减少无意义的防御，聚焦问题。
 
 写作时也会发生和实现时类似的问题：模型没有沿着我的意思往下写，而是自己加一些我没说过的前提、反对意见或者限制，然后花一大段去回应它自己虚构出来的问题。
 

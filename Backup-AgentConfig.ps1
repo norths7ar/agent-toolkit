@@ -41,16 +41,24 @@ if (Test-Path -LiteralPath $dshInstructions -PathType Leaf) {
     }
 }
 # Per-model prompts and bindings are maintained directly in this repository.
-$skills = @(Get-ChildItem -LiteralPath $SkillsRoot -Directory -Force | Where-Object {
-    Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf
-})
-foreach ($skill in $skills) {
-    if ($skill.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source: $($skill.FullName)" }
-    $name = $skill.Name
-    $sourceRoot = $skill.FullName
-    foreach ($file in Get-SkillFiles $sourceRoot) {
-        $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
-        $files += [pscustomobject]@{ Source = $file.FullName; Target = Join-Path $repoRoot "skills/$name/$relative" }
+$skillLocations = @(
+    @{ Source = $SkillsRoot; Target = 'skills' }
+    @{ Source = (Join-Path $CodexRoot 'skills'); Target = 'codex/skills' }
+)
+foreach ($location in $skillLocations) {
+    if ($location.Target -eq 'codex/skills' -and -not (Test-Path -LiteralPath $location.Source -PathType Container)) { continue }
+    $skills = @(Get-ChildItem -LiteralPath $location.Source -Directory -Force | Where-Object {
+        $_.Name -ne '.system' -and
+        (Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf)
+    })
+    foreach ($skill in $skills) {
+        if ($skill.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source: $($skill.FullName)" }
+        $name = $skill.Name
+        $sourceRoot = $skill.FullName
+        foreach ($file in Get-SkillFiles $sourceRoot) {
+            $relative = [IO.Path]::GetRelativePath($sourceRoot, $file.FullName)
+            $files += [pscustomobject]@{ Source = $file.FullName; Target = Join-Path $repoRoot "$($location.Target)/$name/$relative" }
+        }
     }
 }
 # Antigravity global customizations (non-secret assets only; runtime config.json, mcp_config.json, brain/ and builtin/ are excluded).

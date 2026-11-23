@@ -10,6 +10,7 @@
 | [模型基础指令](codex/instructions/base-instructions/) | Astra、Sol、Terra、Luna 的提示词，供取用和修改 |
 | [项目指令模板](AGENTS.project-template.md) | 作为项目根目录 `AGENTS.md` 的起点 |
 | [Skills](skills/) | 将需要的 Skill 目录复制到 `~/.agents/skills/`，用法见各自的 `SKILL.md` |
+| [Codex 专用 Skills](codex/skills/) | 将需要的 Skill 目录复制到 `~/.codex/skills/`，不加入跨工具共享目录 |
 | [Antigravity 配置](antigravity/) | 包含 `skills.json` 共享声明、差异化覆盖 Skills 与全局规则/Hooks/Plugins 清单；换机恢复时先恢复 `~/.agents/skills/`，再将 `antigravity/` 复制到 `~/.gemini/config/`（若含 `GEMINI.md` 则放回 `~/.gemini/`） |
 | [DSH 指令](deepseek-harness/instructions/) | DSH 全局指令和模型提示词，供参考和取用 |
 
@@ -56,6 +57,8 @@ pwsh -File ./Backup-AgentConfig.ps1
 ```
 
 可通过 `-CodexRoot`、`-DshRoot`、`-SkillsRoot`、`-GeminiRoot` 指定来源目录。默认使用 `CODEX_HOME`、`DSH_HOME`，未设置时分别为 `~/.codex/`、`~/.dsh/`；Skills 默认读取 `~/.agents/skills/`，Antigravity 默认读取 `~/.gemini/` 下的 `GEMINI.md` 与 `config/`（`skills.json`、`plugins.json`、`hooks.json`、`rules/` 及差异化 `skills/`）。
+
+共享 Skills 收集到 `skills/`；`CodexRoot/skills/` 下的用户级 Skills 收集到 `codex/skills/`，跳过 `.system` 和没有 `SKILL.md` 的目录。用户级目录中安装的官方 Skills 也会收集。备份只新增或更新文件，不自动删除旧备份；移动 Skill 的归属时，应同步迁移仓库中的旧目录。
 
 ### 导出 DSH 提示词
 
